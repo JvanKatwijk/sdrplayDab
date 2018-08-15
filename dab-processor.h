@@ -1,0 +1,179 @@
+#
+/*
+ *    Copyright (C) 2013 .. 2017
+ *    Jan van Katwijk (J.vanKatwijk@gmail.com)
+ *    Lazy Chair Computing
+ *
+ *    This file is part of the Qt-DAB program
+ *    Qt-DAB is free software; you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation; either version 2 of the License, or
+ *    (at your option) any later version.
+ *
+ *    Qt-DAB is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with Qt-DAB; if not, write to the Free Software
+ *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+#
+#ifndef	__DAB_PROCESSOR__
+#define	__DAB_PROCESSOR__
+/*
+ *	dabProcessor is the embodying of all functionality related
+ *	to the actal DAB processing.
+ */
+#include	"dab-constants.h"
+#include	<QObject>
+#include	<vector>
+#include	"stdint.h"
+#include	<sndfile.h>
+#include	"phasereference.h"
+#include	"ofdm-decoder.h"
+#include	"fic-handler.h"
+#include	"msc-handler.h"
+#include	"ringbuffer.h"
+#include	"tii_detector.h"
+//
+
+#define	DUMPSIZE	4096
+class	RadioInterface;
+class	dabParams;
+class	QSettings;
+
+#define	START		0000
+#define	INIT		0001
+#define	LOOKING_FOR_DIP	0002
+#define	DIP_FOUND	0003
+#define	END_OF_DIP	0004
+#define	GO_FOR_BLOCK_0	0005
+#define	SYNC_COMPLETE	0006
+#define	BLOCK_READING	0007
+#define	END_OF_FRAME	0010
+#define	SKIP_NULL_PERIOD		0011
+
+//
+//	return values for addSymbol
+#define	GO_ON			0
+#define	INITIAL_STRENGTH	1
+#define	DEVICE_UPDATE		2
+
+class dabProcessor: public QObject {
+Q_OBJECT
+public:
+		dabProcessor  	(RadioInterface *,
+	                         uint8_t,
+	                         int16_t,
+	                         int16_t,
+	                         int16_t,
+	                         RingBuffer<float> *,
+	                         RingBuffer<std::complex <float>> *,
+	                         RingBuffer<std::complex <float>> *,
+	                         RingBuffer<std::complex <float>> *,
+	                         QString
+	                        );
+		~dabProcessor	(void);
+	int		addSymbol		(std::complex<float>);
+	void		reset			(void);
+	void		stop			(void);
+	void		setOffset		(int32_t);
+	void		coarseCorrectorOn	(void);
+	void		coarseCorrectorOff	(void);
+	void		update_data		(int *, float *, float *);
+	float		initialSignal		(void);
+//
+//	inheriting from our delegates
+	void		set_tiiCoordinates	(void);
+	void		setSelectedService      (QString &);
+        uint8_t		kindofService           (QString &);
+        void		dataforAudioService     (int16_t,   audiodata *);
+        void		dataforAudioService     (QString &,   audiodata *);
+        void		dataforAudioService     (QString &,
+	                                             audiodata *, int16_t);
+        void		dataforDataService      (int16_t,   packetdata *);
+        void		dataforDataService      (QString &,   packetdata *);
+        void		dataforDataService      (QString &,
+	                                             packetdata *, int16_t);
+	void		reset_msc		(void);
+	void		set_audioChannel	(audiodata *,
+	                                             RingBuffer<int16_t> *);
+	void		set_dataChannel		(packetdata *,
+	                                             RingBuffer<uint8_t> *);
+        uint8_t		get_ecc                 (void);
+        int32_t		get_ensembleId          (void);
+        QString		get_ensembleName        (void);
+	void		clearEnsemble		(void);
+
+	void		stopDumping		(void);
+	void		startDumping		(SNDFILE *f);
+private:
+	void		dump			(std::complex<float>);
+	int16_t         dumpIndex;
+	int16_t         dumpScale;
+	int16_t         dumpBuffer [DUMPSIZE];
+	std::atomic<SNDFILE *>  dumpfilePointer;
+
+	bool		tiiSwitch;
+	dabParams	params;
+	uint8_t		dabMode;
+	RadioInterface	*myRadioInterface;
+	ficHandler	my_ficHandler;
+	mscHandler	my_mscHandler;
+	phaseReference	phaseSynchronizer;
+	TII_Detector	my_TII_Detector;
+	ofdmDecoder	my_ofdmDecoder;
+	RingBuffer<std::complex<float>> *spectrumBuffer;
+	RingBuffer<std::complex<float>> *tiiBuffer;
+	std::vector<std::complex<float>> localBuffer;
+	int32_t         localCounter;
+	int32_t         bufferSize;
+
+
+	int16_t		attempts;
+	int32_t		T_null;
+	int32_t		T_u;
+	int32_t		T_s;
+	int32_t		T_g;
+	int32_t		T_F;
+	int32_t		nrBlocks;
+	int32_t		carriers;
+	int32_t		carrierDiff;
+	int16_t		fineOffset;
+	int32_t		coarseOffset;
+	int32_t		totalOffset;
+	int32_t		sampleCount;
+	int32_t		nullCount;
+	uint8_t		processorMode;
+	bool		correctionNeeded;
+	std::vector<std::complex<float>	>ofdmBuffer;
+	std::vector<float>dataBuffer;
+	int		bufferP;
+	int		ofdmBufferIndex;
+	float		avgSignalValue;
+	float		avgLocalValue;
+	int		counter;
+	float		dipValue;
+	int		dipCnt;
+	float		block0_Value;
+
+	std::complex<float>		FreqCorr;
+	int		ofdmSymbolCount;
+	std::vector<int16_t>	ibits;
+	bool            wasSecond               (int16_t, dabParams *);
+	void		handle_tii_detection	(std::vector<std::complex<float>>);
+
+signals:
+	void		setSynced		(char);
+	void		No_Signal_Found		(void);
+	void		setSyncLost		(void);
+	void		showCoordinates		(int, int);
+//	void		showCoordinates		(float, float);
+	void		show_Spectrum		(int);
+	void		set_freqOffset		(int);
+	void		show_tii		(int);
+};
+#endif
+
