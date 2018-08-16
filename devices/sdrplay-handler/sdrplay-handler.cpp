@@ -403,12 +403,12 @@ static	int teller	= 0;
 	            if (GRdB > 20)
 	               GRdB = 20;
 	            if ((ifGain + GRdB >= 20) && (ifGain + GRdB <= 59)) {
-	               err = p -> my_mir_sdr_RSP_SetGr (GRdB,
+	               err = p -> my_mir_sdr_RSP_SetGr (ifGain + GRdB,
 	                                                p -> lnaState, 0 , 0);
 	               if (err != mir_sdr_Success)
 	                  fprintf (stderr,
-	                           "error updating GainReduction (%d), curr = %f) %s\n",
-	                              GRdB, gains. curr,
+	                           "error updating GainReduction (%d), GRdb = %d, lnaState = %d, ifGain = %d, curr = %f, low = %f, high = %f) %s\n",
+	                              ifGain + GRdB, GRdB, p -> lnaState, ifGain, gains. curr, gains. min, gains. max,
 	                              p -> errorCodes (err). toLatin1 (). data ());
 	            }
 	         }
