@@ -156,11 +156,10 @@ private:
 	int		counter;
 	float		dipValue;
 	int		dipCnt;
-	float		block0_Value;
 
 	std::complex<float>		FreqCorr;
 	int		ofdmSymbolCount;
-	std::vector<int16_t>	ibits;
+	std::vector<int16_t>		ibits;
 	bool            wasSecond               (int16_t, dabParams *);
 	void		handle_tii_detection	(std::vector<std::complex<float>>);
 

@@ -342,7 +342,8 @@ void	sdrplayHandler::set_lnagainReduction (int lnaState) {
 mir_sdr_ErrT err;
 
 	this	-> lnaState	= lnaState;
-	err			= my_mir_sdr_RSP_SetGr (30, lnaState, 1 , 0);
+	err			=
+	                 my_mir_sdr_RSP_SetGr (30, lnaState, 1 , 0);
 	if (err != mir_sdr_Success)
 	   fprintf (stderr, "error in lna state (%d) %s\n",
 	                              lnaState,
@@ -381,7 +382,7 @@ static	int teller	= 0;
 	   if (res == DEVICE_UPDATE) {
 	      mir_sdr_ErrT err;
 	      mir_sdr_GainValuesT gains;
-
+	      volatile int refValue	= p -> gain_setpoint -> value ();
 	      int	offset;
 	      float	lowVal;
 	      float	highVal;
@@ -394,23 +395,30 @@ static	int teller	= 0;
 	                               p -> errorCodes (err). toLatin1 (). data ());
 	         float str = 10 * log10 ((highVal + 0.005)  / denominator);
 	         float lvv = 10 * log10 ((lowVal  + 0.005)  / denominator);
-	         int GRdB = str - (p -> gain_setpoint -> value ());
+//
+//	offset in gain reduction setting:
+	         int GRdB = p -> gain_setpoint -> value () - str;
+//
+//	current ig gain reduction value
+	         int ifGainRed	= gains. curr - get_lnaGRdB (p -> hwVersion,
+	                                                     p -> lnaState);
+//	check for reasonable offset value
+	         if (GRdB < -20) GRdB = -20;
+	         if (GRdB >  20) GRdB =  20;
+	         if (ifGainRed - GRdB < 20)
+	            GRdB = ifGainRed - 20;
+	         if (ifGainRed - GRdB > 59)
+	            GRdB = ifGainRed - 59;
 	         if (GRdB != 0) {
-	            int ifGain = gains. curr - get_lnaGRdB (p -> hwVersion,
-	                                                    p -> lnaState);
-	            if (GRdB < -20) 	
-	               GRdB = -20;
-	            if (GRdB > 20)
-	               GRdB = 20;
-	            if ((ifGain + GRdB >= 20) && (ifGain + GRdB <= 59)) {
-	               err = p -> my_mir_sdr_RSP_SetGr (ifGain + GRdB,
-	                                                p -> lnaState, 1 , 0);
-	               if (err != mir_sdr_Success)
-	                  fprintf (stderr,
-	                           "error updating GainReduction (%d), GRdb = %d, lnaState = %d, ifGain = %d, curr = %f, low = %f, high = %f) %s\n",
-	                              ifGain + GRdB, GRdB, p -> lnaState, ifGain, gains. curr, gains. min, gains. max,
-	                              p -> errorCodes (err). toLatin1 (). data ());
-	            }
+	            err = p -> my_mir_sdr_RSP_SetGr (-GRdB,
+	                                             p -> lnaState, 0 , 0);
+	            if (err != mir_sdr_Success)
+	               fprintf (stderr, "error updating GainReduction: GRdb = %d, lnaState = %d, curr = %f, ifGainRed %d (%s)\n",
+	                     - GRdB,
+	                     p -> lnaState,
+	                     gains. curr,
+	                     ifGainRed - GRdB,
+	                     p -> errorCodes (err). toLatin1 (). data ());
 	         }
 	         p -> averageValue -> display (str);
 	         p -> nullValue -> display (lvv);
@@ -428,16 +436,15 @@ static	int teller	= 0;
 	                           p -> errorCodes (err). toLatin1 (). data ());
 	      float str	= 10 * log10 ((p -> base -> initialSignal () + 0.005) / denominator);
 	      int GRdB = str - (p -> gain_setpoint -> value ()); 
-	      fprintf (stderr, "initial strength = %f GRdB %d, observed reduction %f\n",
-	                                           str, GRdB,  gains. curr);
-
+	      if (GRdB >  20) GRdB =  20;
+	      if (GRdB < -20) GRdB = -20;
 	      GRdB += gains. curr -  get_lnaGRdB (p -> hwVersion,
 	                                          p -> lnaState);
 
 	      if ((GRdB >= 20) && (GRdB <= 59)) {
 	         err = p -> my_mir_sdr_RSP_SetGr (GRdB, p -> lnaState, 1 , 0);
 	         if (err != mir_sdr_Success) 
-	            fprintf (stderr, "error updating GainReduction (%d) %s\n",
+	            fprintf (stderr, "error setting gainReduction at search phase (%d) %s\n",
 	                                      GRdB,
 	                               p -> errorCodes (err). toLatin1 (). data ());
 	      }

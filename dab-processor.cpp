@@ -170,7 +170,6 @@ int	retValue	= GO_ON;		// default
 	      counter		= 0;
 	      dipValue		= 0;
 	      dipCnt		= 0;
-	      block0_Value	= 0;
 	      fineOffset	= 0;
 	      correctionNeeded	= true;
 	      coarseOffset	= 0;
@@ -182,12 +181,6 @@ int	retValue	= GO_ON;		// default
 	      break;
 
 	   case INIT:
-//	      avgSignalValue	= 0.9999 * avgSignalValue +
-//	                          0.0001 * jan_abs (symbol);
-//	      dataBuffer [bufferP] = jan_abs (symbol);
-//	      avgLocalValue	+= jan_abs (symbol) -
-//	                                dataBuffer [(bufferP - 50) & BUFMASK];
-//	      bufferP		= (bufferP + 1) & BUFMASK;
 	      if (++counter >= 2 * T_F) {
 	         processorMode	= LOOKING_FOR_DIP;
 	         retValue	= INITIAL_STRENGTH;	
@@ -199,12 +192,6 @@ int	retValue	= GO_ON;		// default
 //	After recognizing a frame, we pass this and continue
 //	at end of dip
 	   case LOOKING_FOR_DIP:
-//	      avgSignalValue	= 0.9999 * avgSignalValue +
-//                                  0.0001 * jan_abs (symbol);
-//	      avgLocalValue	+= jan_abs (symbol) -
-//	                           dataBuffer [(bufferP - 50) & BUFMASK];
-//	      dataBuffer [bufferP] = jan_abs (symbol);
-//	      bufferP		= (bufferP + 1) & BUFMASK;
 	      counter	++;
 	      if (avgLocalValue / 50 < avgSignalValue * 0.45) {
 	         processorMode	= DIP_FOUND;
@@ -227,12 +214,6 @@ int	retValue	= GO_ON;		// default
 	      break;
 	      
 	   case DIP_FOUND:
-//	      avgSignalValue	= 0.9999 * avgSignalValue +
-//	                          0.0001 * jan_abs (symbol);
-//	      avgLocalValue     += jan_abs (symbol) -
-//	                           dataBuffer [(bufferP - 50) & BUFMASK];
-//	      dataBuffer [bufferP] = jan_abs (symbol);
-//	      bufferP		= (bufferP + 1) & BUFMASK;
 	      dipValue		+= jan_abs (symbol);
 	      dipCnt		++;
 	      if (avgLocalValue / BUFSIZE > avgSignalValue * 0.8) {
@@ -258,15 +239,8 @@ int	retValue	= GO_ON;		// default
 
 	   case END_OF_DIP:
 	      ofdmBuffer [ofdmBufferIndex ++] = symbol;
-//	      avgSignalValue	= 0.9999 * avgSignalValue +
-//	                          0.0001 * jan_abs (symbol);
-//	      avgLocalValue     += jan_abs (symbol) -
-//	                           dataBuffer [(bufferP - 50) & BUFMASK];
-//	      dataBuffer [bufferP] = jan_abs (symbol);
-//	      bufferP		= (bufferP + 1) & BUFMASK;
 	      if (ofdmBufferIndex >= T_u) {
 	         int startIndex = phaseSynchronizer. findIndex (ofdmBuffer);
-//	         fprintf (stderr, "startIndex = %d\n", startIndex);
 	         if (startIndex < 0) {		// no sync
 	            if (attempts > 5) {
 	               emit No_Signal_Found ();
@@ -284,21 +258,13 @@ int	retValue	= GO_ON;		// default
                            (T_u - startIndex) * sizeof (std::complex<float>));
 	         ofdmBufferIndex  = T_u - startIndex;
 	         processorMode	= GO_FOR_BLOCK_0;
-	         block0_Value	= 0;
 	      }
 	      break;
 
 	   case GO_FOR_BLOCK_0:
-//	      avgSignalValue	= 0.9999 * avgSignalValue +
-//	                          0.0001 * jan_abs (symbol);
-//	       avgLocalValue     += jan_abs (symbol) -
-//                                        dataBuffer [(bufferP - 50) & BUFMASK];
-//	      dataBuffer [bufferP] = jan_abs (symbol);
-//	      bufferP		= (bufferP + 1) & BUFMASK;
 	      ofdmBuffer [ofdmBufferIndex] = symbol;
 	      if (++ofdmBufferIndex < T_u)
 	         break;
-	      block0_Value	/= T_u;
 //	      fprintf (stderr, "%f %f\n", dipValue, b0_amp);
 	      my_ofdmDecoder. processBlock_0 (ofdmBuffer);
 	      my_mscHandler.  processBlock_0 (ofdmBuffer. data ());
@@ -329,7 +295,6 @@ int	retValue	= GO_ON;		// default
 
 	   case BLOCK_READING:
 	      ofdmBuffer [ofdmBufferIndex ++] = symbol;
-	      block0_Value	+= jan_abs (symbol);
 	      if (ofdmBufferIndex < T_s) 
 	         break;
 
@@ -345,7 +310,6 @@ int	retValue	= GO_ON;		// default
 	      ofdmBufferIndex	= 0;
 	      if (++ofdmSymbolCount >= nrBlocks) {
 	         processorMode	= END_OF_FRAME;
-	         block0_Value /= T_s * nrBlocks;
 	      }
 	      break;
 
@@ -480,7 +444,7 @@ int	result	= coarseOffset + fineOffset;
 	}
 	*freq		= result;
 	*dip		= dipValue;
-	*firstSymb	= block0_Value;
+	*firstSymb	= avgSignalValue;
 }
 
 float	dabProcessor::initialSignal	(void) {
