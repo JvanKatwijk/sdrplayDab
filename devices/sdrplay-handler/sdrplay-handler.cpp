@@ -342,7 +342,7 @@ void	sdrplayHandler::set_lnagainReduction (int lnaState) {
 mir_sdr_ErrT err;
 
 	this	-> lnaState	= lnaState;
-	err			= my_mir_sdr_RSP_SetGr (30, lnaState, 0 , 0);
+	err			= my_mir_sdr_RSP_SetGr (30, lnaState, 1 , 0);
 	if (err != mir_sdr_Success)
 	   fprintf (stderr, "error in lna state (%d) %s\n",
 	                              lnaState,
@@ -404,7 +404,7 @@ static	int teller	= 0;
 	               GRdB = 20;
 	            if ((ifGain + GRdB >= 20) && (ifGain + GRdB <= 59)) {
 	               err = p -> my_mir_sdr_RSP_SetGr (ifGain + GRdB,
-	                                                p -> lnaState, 0 , 0);
+	                                                p -> lnaState, 1 , 0);
 	               if (err != mir_sdr_Success)
 	                  fprintf (stderr,
 	                           "error updating GainReduction (%d), GRdb = %d, lnaState = %d, ifGain = %d, curr = %f, low = %f, high = %f) %s\n",
