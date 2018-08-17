@@ -6,5 +6,9 @@ used in qt-dab.
 
 ![sdrplayDab](/sdrplay-dab.png?raw=true)
 
+Note that apart from device handling and ofdm handling, the code
+is the code from qt-dab.
+It is most likely that this code will be merged with the qt-dab code base.
+
 
 
