@@ -32,7 +32,7 @@
   *	local are classes ofdmDecoder, ficHandler and mschandler.
   */
 #define BUFSIZE 64
-#define BUFMASK 63
+#define BUFMASK (64 - 1)
 #define	N	5
 
 static
@@ -109,6 +109,8 @@ int32_t	i;
         dumpScale			= valueFor (bitDepth);
 
 	ibits. resize (2 * carriers);
+//
+//	for the spectrum display we need:
 	bufferSize              = 32768;
         localBuffer. resize (bufferSize);
         localCounter            = 0;
@@ -138,12 +140,11 @@ int32_t	i;
 int	dabProcessor::addSymbol	(std::complex<float> symbol) {
 int	retValue	= GO_ON;		// default
 
-
 	avgSignalValue	= 0.9999 * avgSignalValue +
 	                  0.0001 * jan_abs (symbol);
 	dataBuffer [bufferP] = jan_abs (symbol);
 	avgLocalValue	+= jan_abs (symbol) -
-	                                dataBuffer [(bufferP - 50) & BUFMASK];
+	                   dataBuffer [(bufferP - 50) & BUFMASK];
 	bufferP		= (bufferP + 1) & BUFMASK;
 
 	if (dumpfilePointer. load () != nullptr)
@@ -152,7 +153,6 @@ int	retValue	= GO_ON;		// default
 	if (localCounter < bufferSize)
 	   localBuffer [localCounter ++] = symbol;
 	sampleCount ++;
-
 
 	if (++sampleCount > INPUT_RATE / N) {
 	   sampleCount	= 0;
@@ -194,6 +194,7 @@ int	retValue	= GO_ON;		// default
 	   case LOOKING_FOR_DIP:
 	      counter	++;
 	      if (avgLocalValue / 50 < avgSignalValue * 0.45) {
+	         retValue	= DEVICE_UPDATE;
 	         processorMode	= DIP_FOUND;
 	         dipValue	= 0;
 	         dipCnt		= 0;
@@ -218,7 +219,6 @@ int	retValue	= GO_ON;		// default
 	      dipCnt		++;
 	      if (avgLocalValue / BUFSIZE > avgSignalValue * 0.8) {
 	         dipValue		/= dipCnt;
-	         retValue		= DEVICE_UPDATE;
                  processorMode  	= END_OF_DIP;
 	         ofdmBufferIndex	= 0;
 	      }
@@ -265,7 +265,6 @@ int	retValue	= GO_ON;		// default
 	      ofdmBuffer [ofdmBufferIndex] = symbol;
 	      if (++ofdmBufferIndex < T_u)
 	         break;
-//	      fprintf (stderr, "%f %f\n", dipValue, b0_amp);
 	      my_ofdmDecoder. processBlock_0 (ofdmBuffer);
 	      my_mscHandler.  processBlock_0 (ofdmBuffer. data ());
 //      Here we look only at the block_0 when we need a coarse
@@ -328,19 +327,24 @@ int	retValue	= GO_ON;		// default
 //
 //	Once here, we are - without even looking - sure
 //	that we are in a dip period
-	      processorMode	= SKIP_NULL_PERIOD;
-	      nullCount		= 0;
-	      dipValue		= 0;
+	      processorMode	= PREPARE_FOR_SKIP_NULL_PERIOD;
+	      retValue		= DEVICE_UPDATE;
 	      break;
 //
 //	here, we skip the next null period
+	   case PREPARE_FOR_SKIP_NULL_PERIOD:
+	      nullCount		= 0;
+	      dipValue		= 0;
+	      ofdmBuffer [nullCount ++] = symbol;
+	      processorMode	= SKIP_NULL_PERIOD;
+	      break;
+
 	   case SKIP_NULL_PERIOD:
 	      ofdmBuffer [nullCount] = symbol;
 	      dipValue		+= jan_abs (symbol);
 	      nullCount ++;
 	      if (nullCount >= T_null - 1) {
 	         processorMode = END_OF_DIP;
-	         retValue	= DEVICE_UPDATE;
 	         dipValue	/= T_null;
 	         if ((dabMode == 1) &&
 	              wasSecond (my_ficHandler. get_CIFcount (), &params)) {

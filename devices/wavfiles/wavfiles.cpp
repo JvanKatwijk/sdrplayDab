@@ -45,7 +45,7 @@ SF_INFO *sf_info;
 	fileName	= f;
 	myFrame		= new QFrame;
 	setupUi (myFrame);
-	myFrame		-> show ();
+//	myFrame		-> show ();
 
 	tester		= 3;
 	_I_Buffer	= new RingBuffer<std::complex<float>>(__BUFFERSIZE);
@@ -139,5 +139,17 @@ float	temp [2 * length];
 	for (i = 0; i < n; i ++)
 	   data [i] = std::complex<float> (temp [2 * i], temp [2 * i + 1]);
 	return	n & ~01;
+}
+
+void	wavFiles::show		(void) {
+	myFrame	-> show 	();
+}
+
+void	wavFiles::hide		(void) {
+	myFrame	-> hide ();
+}
+
+bool	wavFiles::isVisible	(void) {
+	return myFrame	-> isVisible ();
 }
 

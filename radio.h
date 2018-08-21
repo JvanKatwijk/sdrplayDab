@@ -197,6 +197,7 @@ private slots:
 	void		setPresetStation	(void);
 	void		set_irSwitch		(void);
 	void		set_tiiSwitch		(void);
+	void		set_devicehandlerSwitch	(void);
 	void		set_spectrumSwitch	(void);
 };
 #endif

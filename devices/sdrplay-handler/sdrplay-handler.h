@@ -101,6 +101,9 @@ public:
 	void		stopReader		(void);
 	void		resetBuffer		(void);
 	int16_t		bitDepth		(void);
+	void		show			(void);
+	void		hide			(void);
+	bool		isVisible		(void);
 	void		setEnv			(dabProcessor *);
 //
 //	The buffer should be visible by the callback function

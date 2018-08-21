@@ -1275,6 +1275,13 @@ void	RadioInterface::set_spectrumSwitch (void) {
 	   my_spectrumViewer -> hide ();
 }
 
+void	RadioInterface::set_devicehandlerSwitch	(void) {
+	if (inputDevice	-> isVisible ())
+	   inputDevice	-> hide ();
+	else
+	   inputDevice	-> show ();
+}
+
 //
 //	When changing (or setting) a device, we do not want anybody
 //	to have the buttons on the GUI touched, so
@@ -1305,6 +1312,8 @@ void	RadioInterface::connectGUI (void) {
 	         this, SLOT (set_irSwitch (void)));
 	connect (show_spectrumButton, SIGNAL (clicked (void)),
 	         this, SLOT (set_spectrumSwitch (void)));
+	connect (show_deviceHandler, SIGNAL (clicked (void)),
+	         this, SLOT (set_devicehandlerSwitch (void)));
 	connect (channelSelector, SIGNAL (activated (const QString &)),
 	         this, SLOT (selectChannel (const QString &)));
 }

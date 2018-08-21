@@ -38,9 +38,12 @@ class	wavFiles: public deviceHandler,
 public:
 			wavFiles	(QString);
 	       		~wavFiles	(void);
-        bool            restartReader           (int32_t);
-        void            stopReader              (void);
-        int16_t         bitDepth                (void);
+        bool            restartReader	(int32_t);
+        void            stopReader	(void);
+        int16_t         bitDepth	(void);
+	void		show		(void);
+	void		hide		(void);
+	bool		isVisible	(void);
 private:
 	QString		fileName;
 	int		tester;

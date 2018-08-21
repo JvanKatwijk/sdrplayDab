@@ -74,7 +74,7 @@ int     opt;
 
 	QCoreApplication::setOrganizationName ("Lazy Chair Computing");
 	QCoreApplication::setOrganizationDomain ("Lazy Chair Computing");
-	QCoreApplication::setApplicationName ("qt-dab");
+	QCoreApplication::setApplicationName ("sdrplayDab");
 	QCoreApplication::setApplicationVersion (QString (CURRENT_VERSION) + " Git: " + GITHASH);
 
 	while ((opt = getopt (argc, argv, "i:P:")) != -1) {
@@ -104,7 +104,7 @@ int     opt;
 	qDebug() << "main:" <<  "Detected system language" << locale;
 	setTranslator (locale);
 
-	a. setWindowIcon (QIcon (":/qt-dab.ico"));
+	a. setWindowIcon (QIcon (":/sdrplay-dab.ico"));
 
 	MyRadioInterface = new RadioInterface (dabSettings,
 	                                       dataPort

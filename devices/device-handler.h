@@ -38,6 +38,9 @@ virtual		void	stopReader	(void);
 virtual		void	resetBuffer	(void);
 virtual		int16_t	bitDepth	(void) { return 10;}
 virtual		void	setEnv		(dabProcessor *);
+virtual		void	show		(void) {}
+virtual		void	hide		(void) {}
+virtual		bool	isVisible	(void) {return true;}
 protected:
 	dabProcessor	*base;
 };

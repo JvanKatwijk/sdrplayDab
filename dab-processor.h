@@ -53,7 +53,8 @@ class	QSettings;
 #define	SYNC_COMPLETE	0006
 #define	BLOCK_READING	0007
 #define	END_OF_FRAME	0010
-#define	SKIP_NULL_PERIOD		0011
+#define	PREPARE_FOR_SKIP_NULL_PERIOD	0011
+#define	SKIP_NULL_PERIOD		0012
 
 //
 //	return values for addSymbol

@@ -67,7 +67,7 @@ sdrplaySelect	*sdrplaySelector;
 	sdrplaySettings			= s;
 	this	-> myFrame		= new QFrame (NULL);
 	setupUi (this -> myFrame);
-	this	-> myFrame	-> show ();
+//	this	-> myFrame	-> show ();
 	antennaSelector		-> hide ();
 	tunerSelector		-> hide ();
 	this	-> inputRate		= Khz (2048);
@@ -799,5 +799,17 @@ QString	sdrplayHandler::errorCodes (mir_sdr_ErrT err) {
 
 void	sdrplayHandler::setEnv	(dabProcessor *p) {
 	base	= p;
+}
+
+void	sdrplayHandler::show	(void) {
+	myFrame		-> show ();
+}
+
+void	sdrplayHandler::hide	(void) {
+	myFrame		-> hide	();
+}
+
+bool	sdrplayHandler::isVisible	(void) {
+	return myFrame	-> isVisible ();
 }
 
