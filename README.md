@@ -10,5 +10,11 @@ Note that apart from device handling and ofdm handling, the code
 is the code from qt-dab.
 It is most likely that this code will be merged with the qt-dab code base.
 
+Note that while it is possible to read in and process a file, neither the
+main program nor the file handler will do frequency correction.
+
+With sdrplayDab one is able to dump the frequency and gain corrected input
+into a file, so these files can be processed successfully by sdrplayDab.
+
 
 

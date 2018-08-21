@@ -338,10 +338,10 @@ int	retValue	= GO_ON;		// default
 	      ofdmBuffer [nullCount] = symbol;
 	      dipValue		+= jan_abs (symbol);
 	      nullCount ++;
-	      if (nullCount >= T_s - 1) {
+	      if (nullCount >= T_null - 1) {
 	         processorMode = END_OF_DIP;
 	         retValue	= DEVICE_UPDATE;
-	         dipValue	/= T_s;
+	         dipValue	/= T_null;
 	         if ((dabMode == 1) &&
 	              wasSecond (my_ficHandler. get_CIFcount (), &params)) {
 	            handle_tii_detection (ofdmBuffer);
@@ -464,7 +464,8 @@ bool    dabProcessor::wasSecond (int16_t cf, dabParams *p) {
         }
 }
 
-void	dabProcessor::handle_tii_detection (std::vector<std::complex<float>> b) {
+void	dabProcessor::handle_tii_detection
+	                      (std::vector<std::complex<float>> b) {
 	my_TII_Detector. addBuffer (ofdmBuffer);
 	if (++tii_counter >= tii_delay) {
 	   int16_t mainId      = -1;

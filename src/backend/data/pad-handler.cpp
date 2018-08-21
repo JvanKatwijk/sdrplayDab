@@ -355,17 +355,18 @@ int16_t  dataLength                = 0;
 //	Called at the start of the msc datagroupfield,
 //	the msc_length was given by the preceding appType "1"
 void	padHandler::new_MSC_element (std::vector<uint8_t> data) {
-	if (mscGroupElement) { 
-	   if (msc_dataGroupBuffer. size () < dataGroupLength)
+//	if (mscGroupElement) { 
+//	   if (msc_dataGroupBuffer. size () < dataGroupLength)
 //	      fprintf (stderr, "short ? %d %d\n",
 //	                              msc_dataGroupBuffer. size (),
 //	                              dataGroupLength);
-	   build_MSC_segment (msc_dataGroupBuffer);
-	   mscGroupElement	= false;
-	   show_motHandling (false);
-	}
+//	   build_MSC_segment (msc_dataGroupBuffer);
+//	   mscGroupElement	= false;
+//	   show_motHandling (false);
+//	}
 
 	if (data. size () >= dataGroupLength) {	// msc element is single item
+	   msc_dataGroupBuffer. clear ();
 	   build_MSC_segment (data);
 	   mscGroupElement = false;
 	   show_motHandling (true);
@@ -373,7 +374,7 @@ void	padHandler::new_MSC_element (std::vector<uint8_t> data) {
 	   return;
 	}
 
-	mscGroupElement	= true;
+	mscGroupElement		= true;
 	msc_dataGroupBuffer. clear ();
 	msc_dataGroupBuffer	= data;
 	show_motHandling (true);
