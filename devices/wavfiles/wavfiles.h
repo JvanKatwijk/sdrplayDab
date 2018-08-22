@@ -25,25 +25,25 @@
 #include	<QThread>
 #include	<QString>
 #include	<QFrame>
-#include	<atomic>
 #include	<sndfile.h>
 #include	"dab-constants.h"
 #include	"device-handler.h"
 #include	"ringbuffer.h"
 
 #include	"ui_filereader-widget.h"
+class	dabProcessor;
 
 class	wavFiles: public deviceHandler,
 	          public Ui_filereaderWidget, QThread {
 public:
 			wavFiles	(QString);
 	       		~wavFiles	(void);
-        bool            restartReader	(int32_t);
-        void            stopReader	(void);
-        int16_t         bitDepth	(void);
+	bool		restartReader	(int);
+	void		stopReader	(void);
+	void		setEnv		(dabProcessor *);
 	void		show		(void);
 	void		hide		(void);
-	bool		isVisible	(void);
+	bool		isVisible       (void);
 private:
 	QString		fileName;
 	int		tester;
@@ -54,7 +54,8 @@ virtual	void		run		(void);
 	int32_t		bufferSize;
 	SNDFILE		*filePointer;
 	bool		readerOK;
-	std::atomic<bool>	running;
+	bool		readerPausing;
+	bool		ExitCondition;
 	int64_t		currPos;
 };
 

@@ -101,10 +101,10 @@ std::complex<float> cdiv (std::complex<float> x, float y) {
 	return std::complex<float> (real (x) / y, imag (x) / y);
 }
 
-static inline
-float	get_db (float x) {
-	return 20 * log10 ((x + 0.005) / (float)(256));
-}
+//static inline
+//float	get_db (float x) {
+//	return 20 * log10 ((x + 0.005) / (float)(256));
+//}
 //
 
 #define	MINIMUM(x, y)	((x) < (y) ? x : y)

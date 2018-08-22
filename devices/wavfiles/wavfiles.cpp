@@ -4,19 +4,19 @@
  *    Jan van Katwijk (J.vanKatwijk@gmail.com)
  *    Lazy Chair Computing
  *
- *    This file is part of the sdrplayDab program
- *    sdrplayDab is free software; you can redistribute it and/or modify
+ *    This file is part of the Qt-DAB program
+ *    Qt-DAB is free software; you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation; either version 2 of the License, or
  *    (at your option) any later version.
  *
- *    sdrplayDab is distributed in the hope that it will be useful,
+ *    Qt-DAB is distributed in the hope that it will be useful,
  *    but WITHOUT ANY WARRANTY; without even the implied warranty of
  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *    GNU General Public License for more details.
  *
  *    You should have received a copy of the GNU General Public License
- *    along with sdrplayDab; if not, write to the Free Software
+ *    along with Qt-DAB; if not, write to the Free Software
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 #include	<stdio.h>
@@ -45,9 +45,8 @@ SF_INFO *sf_info;
 	fileName	= f;
 	myFrame		= new QFrame;
 	setupUi (myFrame);
-//	myFrame		-> show ();
 
-	tester		= 3;
+	readerOK	= false;
 	_I_Buffer	= new RingBuffer<std::complex<float>>(__BUFFERSIZE);
 
 	sf_info		= (SF_INFO *)alloca (sizeof (SF_INFO));
@@ -67,49 +66,79 @@ SF_INFO *sf_info;
 	   throw (25);
 	}
 	nameofFile	-> setText (f);
+	readerOK	= true;
+	readerPausing	= true;
 	currPos		= 0;
-	running. store (false);
+//	start	();
 }
 
 	wavFiles::~wavFiles (void) {
-	running. store (false);
-	while (isRunning ())
-	   usleep (100);
-	sf_close (filePointer);
+	ExitCondition = true;
+	if (readerOK) {
+	   while (isRunning ())
+	      usleep (100);
+	   sf_close (filePointer);
+	}
 	delete _I_Buffer;
 	delete	myFrame;
 }
 
-bool	wavFiles::restartReader	(int32_t f) {
-	(void)f;
+bool	wavFiles::restartReader	(int frequency) {
+	(void)frequency;
+	if (readerOK)
+	   readerPausing = false;
 	start ();
-	return true;
+	return readerOK;
 }
 
 void	wavFiles::stopReader	(void) {
-	running. store (false);
-}
-
-int16_t	wavFiles::bitDepth	(void) {
-	return 12;
+	if (readerOK)
+	   readerPausing = true;
 }
 
 void	wavFiles::run (void) {
 int32_t	t, i;
 std::complex<float>	*bi;
-int32_t	bufferSize	= 16384;
+int32_t	bufferSize	= 32768;
 int64_t	period;
 int64_t	nextStop;
+int64_t	fileLength;
+int	teller		= 0;
 
-	if (running. load ())
+	if (!readerOK)
 	   return;
-	running. store (true);
 
-	period		= (16384 * 1000) / 2048;	// full IQś read
+	fileProgress	-> setValue (0);
+	currentTime	-> display (0);
+	fileLength	= sf_seek (filePointer, 0, SEEK_END);
+	totalTime	-> display ((float)fileLength / 2048000);
+
+	ExitCondition = false;
+
+	period		= (32768 * 1000) / 2048;	// full IQś read
 	fprintf (stderr, "Period = %ld\n", period);
 	bi		= new std::complex<float> [bufferSize];
 	nextStop	= getMyTime ();
-	while (running. load ()) {
+	while (!ExitCondition) {
+	   if (readerPausing) {
+	      usleep (1000);
+	      nextStop = getMyTime ();
+	      continue;
+	   }
+	   while (_I_Buffer -> WriteSpace () < bufferSize) {
+	      if (ExitCondition)
+	         break;
+	      usleep (100);
+	   }
+
+	   if (++teller >= 20) {
+	      int xx = sf_seek (filePointer, 0, SEEK_CUR);
+	      float progress = (float)xx / fileLength;
+	      fileProgress -> setValue ((int) (progress * 100));
+	      currentTime	-> display ((float)xx / 2048000);
+	      teller = 0;
+	   }
+
 	   nextStop += period;
 	   t = readBuffer (bi, bufferSize);
 	   if (t < bufferSize) {
@@ -117,8 +146,10 @@ int64_t	nextStop;
 	          bi [i] = 0;
 	      t = bufferSize;
 	   }
+	
 	   for (i = 0; i < bufferSize; i ++)
 	      base -> addSymbol (bi [i]);
+
 	   if (nextStop - getMyTime () > 0)
 	      usleep (nextStop - getMyTime ());
 	}
@@ -136,17 +167,22 @@ float	temp [2 * length];
 	   sf_seek (filePointer, 0, SEEK_SET);
 	   fprintf (stderr, "End of file, restarting\n");
 	}
+
 	for (i = 0; i < n; i ++)
 	   data [i] = std::complex<float> (temp [2 * i], temp [2 * i + 1]);
 	return	n & ~01;
 }
 
+void	wavFiles::setEnv	(dabProcessor *p) {
+	base	= p;
+}
+
 void	wavFiles::show		(void) {
-	myFrame	-> show 	();
+	myFrame		-> show ();
 }
 
 void	wavFiles::hide		(void) {
-	myFrame	-> hide ();
+	myFrame		-> hide ();
 }
 
 bool	wavFiles::isVisible	(void) {

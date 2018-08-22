@@ -269,6 +269,7 @@ QString h;
 
 	      file	= QDir::toNativeSeparators (file);
 	      inputDevice	= new wavFiles (file);
+	      hideButtons ();
 	   }
 	   catch (int e) {
 	      QMessageBox::warning (this, tr ("Warning"),
@@ -1110,8 +1111,8 @@ void	RadioInterface::showButtons	(void) {
 }
 
 void	RadioInterface::hideButtons	(void) {
-	if (!running. load ())
-	   return;
+//	if (!running. load ())
+//	   return;
 	scanButton	-> hide ();
 	channelSelector	-> hide ();
 	bandSelector	-> hide ();
