@@ -413,7 +413,7 @@ static	int teller	= 0;
 	            err = p -> my_mir_sdr_RSP_SetGr (-GRdB,
 	                                             p -> lnaState, 0 , 0);
 	            if (err != mir_sdr_Success)
-	               fprintf (stderr, "error updating GainReduction: GRdb = %d, lnaState = %d, curr = %f, ifGainRed %d (%s)\n",
+	               fprintf (stderr, "error updating GainReduction: GRdb = %d, lnaState = %d, curr = %f, new ifGainRed %d (%s)\n",
 	                     - GRdB,
 	                     p -> lnaState,
 	                     gains. curr,

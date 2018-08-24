@@ -140,13 +140,15 @@ int32_t	i;
 int	dabProcessor::addSymbol	(std::complex<float> symbol) {
 int	retValue	= GO_ON;		// default
 
+static	int dabCounter	= 0;
+
 	avgSignalValue	= 0.9999 * avgSignalValue +
 	                  0.0001 * jan_abs (symbol);
 	dataBuffer [bufferP] = jan_abs (symbol);
 	avgLocalValue	+= jan_abs (symbol) -
 	                   dataBuffer [(bufferP - 50) & BUFMASK];
 	bufferP		= (bufferP + 1) & BUFMASK;
-
+	dabCounter ++;
 	if (dumpfilePointer. load () != nullptr)
 	   dump (symbol);
 
@@ -253,6 +255,9 @@ int	retValue	= GO_ON;		// default
 	            }
 	         }
 	         attempts	= 0;	// we made it!!!
+	         dabCounter	= dabCounter - T_u + startIndex;
+//	         fprintf (stderr, "%d \n", dabCounter);
+	         dabCounter	= T_u - startIndex;
 	         memmove (ofdmBuffer. data (),
 	                  &((ofdmBuffer. data ()) [startIndex]),
                            (T_u - startIndex) * sizeof (std::complex<float>));

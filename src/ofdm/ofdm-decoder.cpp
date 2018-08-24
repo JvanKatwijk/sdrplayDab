@@ -126,6 +126,7 @@ float	S	= 0;
 
 	for (i = 0; i < carriers; i ++) {
 	   float f = arg (x [i] * conj (std::complex<float> (1, 1))) - avg;
+	   f = f / M_PI * 180;
 	   S += f * f;
 	}
 
