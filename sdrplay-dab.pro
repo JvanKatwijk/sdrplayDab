@@ -9,12 +9,12 @@ TARGET		= sdrplay-dab
 QT		+= widgets 
 CONFIG		+= console
 QMAKE_CXXFLAGS	+= -std=c++11
-#QMAKE_CFLAGS	+=  -flto -ffast-math
-#QMAKE_CXXFLAGS	+=  -flto -ffast-math
-#QMAKE_LFLAGS	+=  -flto
-QMAKE_CFLAGS	+=  -g
-QMAKE_CXXFLAGS	+=  -g
-QMAKE_LFLAGS	+=  -g
+QMAKE_CFLAGS	+=  -flto -ffast-math
+QMAKE_CXXFLAGS	+=  -flto -ffast-math
+QMAKE_LFLAGS	+=  -flto
+#QMAKE_CFLAGS	+=  -g
+#QMAKE_CXXFLAGS	+=  -g
+#QMAKE_LFLAGS	+=  -g
 QMAKE_CXXFLAGS += -isystem $$[QT_INSTALL_HEADERS]
 RC_ICONS	=  sdrplay-dab.ico
 RESOURCES	+= resources.qrc
@@ -24,8 +24,10 @@ TRANSLATIONS = i18n/de_DE.ts i18n/it_IT.ts i18n/hu_HU.ts
 DEPENDPATH += . \
 	      ./src \
 	      ./includes \
+	      ./service-description \
 	      ./src/ofdm \
 	      ./src/backend \
+	      ./src/backend/protection \
 	      ./src/backend/audio \
 	      ./src/backend/data \
 	      ./src/backend/data/mot \
@@ -52,11 +54,13 @@ INCLUDEPATH += . \
 	      ./ \
 	      ./src \
 	      ./includes \
+	      ./service-description \
 	      ./includes/ofdm \
 	      ./devices \
               ./devices/wavfiles \
               ./devices/sdrplay-handler \
 	      ./includes/backend \
+	      ./includes/backend/protection \
 	      ./includes/backend/audio \
 	      ./includes/backend/data \
 	      ./includes/backend/data/mot \
@@ -72,6 +76,9 @@ INCLUDEPATH += . \
 # Input
 HEADERS += ./radio.h \
 	   ./dab-processor.h \
+	   ./service-description/service-descriptor.h \
+	   ./service-description/audio-descriptor.h \
+	   ./service-description/data-descriptor.h \
 	   ./devices/device-handler.h \
 	   ./devices/sdrplay-handler/sdrplay-handler.h \
 	   ./devices/sdrplay-handler/sdrplayselect.h \
@@ -116,9 +123,10 @@ HEADERS += ./radio.h \
 	   ./includes/backend/data/journaline/dabdgdec_impl.h \
 	   ./includes/backend/data/journaline/newsobject.h \
 	   ./includes/backend/data/journaline/NML.h \
-	   ./includes/backend/protection.h \
-	   ./includes/backend/eep-protection.h \
-	   ./includes/backend/uep-protection.h \
+	   ./includes/backend/protection/protection.h \
+	   ./includes/backend/protection/protTables.h \
+	   ./includes/backend/protection/eep-protection.h \
+	   ./includes/backend/protection/uep-protection.h \
 #	   ./includes/output/fir-filters.h \
 	   ./includes/output/audio-base.h \
 	   ./includes/output/newconverter.h \
@@ -131,6 +139,7 @@ HEADERS += ./radio.h \
 	   ./includes/support/dab-params.h \
 	   ./includes/support/band-handler.h \
 	   ./includes/support/text-mapper.h \
+	   ./includes/support/dab_tables.h \
 	   ./includes/support/ensemble-printer.h \
 	   ./includes/scopes-qwt6/spectrogramdata.h \
 	   ./includes/scopes-qwt6/iqdisplay.h \
@@ -140,6 +149,8 @@ HEADERS += ./radio.h \
 
 FORMS	+= ./forms/technical_data.ui
 FORMS	+= ./forms/dabradio.ui 
+FORMS   += ./forms/audio-description.ui
+FORMS   += ./forms/data-description.ui
 FORMS	+= ./devices/sdrplay-handler/sdrplay-widget.ui
 FORMS	+= ./devices/wavfiles/filereader-widget.ui
 FORMS	+= ./spectrum-viewer/scopewidget.ui
@@ -149,6 +160,8 @@ FORMS	+= ./tii-viewer/tii-widget.ui
 SOURCES += ./main.cpp \
 	   ./radio.cpp \
 	   ./dab-processor.cpp \
+	   ./service-description/audio-descriptor.cpp \
+	   ./service-description/data-descriptor.cpp \
 	   ./devices/device-handler.cpp \
            ./devices/sdrplay-handler/sdrplay-handler.cpp \
            ./devices/sdrplay-handler/sdrplayselect.cpp \
@@ -162,19 +175,19 @@ SOURCES += ./main.cpp \
 	   ./src/ofdm/fic-handler.cpp \
 	   ./src/ofdm/fib-processor.cpp  \
 	   ./src/backend/msc-handler.cpp \
-	   ./src/backend/protection.cpp \
-	   ./src/backend/eep-protection.cpp \
-	   ./src/backend/uep-protection.cpp \
 	   ./src/backend/galois.cpp \
 	   ./src/backend/reed-solomon.cpp \
 	   ./src/backend/rscodec.cpp \
 	   ./src/backend/charsets.cpp \
 	   ./src/backend/firecode-checker.cpp \
 	   ./src/backend/frame-processor.cpp \
-	   ./src/backend/protTables.cpp \
 	   ./src/backend/virtual-backend.cpp \
 	   ./src/backend/audio-backend.cpp \
 	   ./src/backend/data-backend.cpp \
+	   ./src/backend/protection/protection.cpp \
+	   ./src/backend/protection/protTables.cpp \
+	   ./src/backend/protection/eep-protection.cpp \
+	   ./src/backend/protection/uep-protection.cpp \
 	   ./src/backend/audio/mp2processor.cpp \
 	   ./src/backend/audio/mp4processor.cpp \
 	   ./src/backend/audio/faad-decoder.cpp \
@@ -205,6 +218,7 @@ SOURCES += ./main.cpp \
 	   ./src/support/dab-params.cpp \
 	   ./src/support/band-handler.cpp \
 	   ./src/support/text-mapper.cpp \
+	   ./src/support/dab_tables.cpp \
 	   ./src/support/ensemble-printer.cpp \
 	   ./src/scopes-qwt6/iqdisplay.cpp \
 	   ./spectrum-viewer/spectrum-viewer.cpp \

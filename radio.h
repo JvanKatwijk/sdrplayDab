@@ -53,6 +53,7 @@ class	deviceHandler;
 class	spectrumViewer;
 class	impulseViewer;
 class	tiiViewer;
+class	serviceDescriptor;
 /*
  *	GThe main gui object. It inherits from
  *	QDialog and the generated form
@@ -65,6 +66,8 @@ public:
 	                                 int32_t	 dataPort,
 	                                 QWidget	*parent = NULL);
 		~RadioInterface		(void);
+protected:
+        bool    eventFilter (QObject *obj, QEvent *event);
 
 private:
 	QSettings	*dabSettings;
@@ -73,11 +76,12 @@ private:
 	Ui_technical_data	techData;
 	QFrame		*dataDisplay;
 	bool		show_data;
-private:
+
+	serviceDescriptor*currentService;
 	void		clear_showElements	(void);
 	void		set_picturePath		(void);
-const	char		*get_programm_type_string (int16_t);
-const	char		*get_programm_language_string (int16_t);
+//const	char		*get_programm_type_string (int16_t);
+//const	char		*get_programm_language_string (int16_t);
 	void		dumpControlState	(QSettings *);
 	void		Yes_Signal_Found	(void);
 	void		Increment_Channel	(void);

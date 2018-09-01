@@ -419,6 +419,12 @@ static	int teller	= 0;
 	                     gains. curr,
 	                     ifGainRed - GRdB,
 	                     p -> errorCodes (err). toLatin1 (). data ());
+	            else
+	              fprintf (stderr, "geen error updating Gainreduction: GRdB = %d, lnaState = %d, curr = %f, new ifGainred %d\n",
+	                     - GRdB,
+	                     p -> lnaState,
+	                     gains. curr,
+	                     ifGainRed - GRdB);
 	         }
 	         p -> averageValue -> display (str);
 	         p -> nullValue -> display (lvv);
