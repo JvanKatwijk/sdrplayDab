@@ -166,7 +166,7 @@ ULONG APIkeyValue_length = 255;
 
 	sdrplaySettings		-> beginGroup ("sdrplaySettings");
 	lnaGainSetting		-> setValue (
-	            sdrplaySettings -> value ("sdrplay-lnastate", 0). toInt ());
+	            sdrplaySettings -> value ("sdrplay-lnastate", 3). toInt ());
 	lnaState	= lnaGainSetting	-> value ();
 
 	ppmControl		-> setValue (
