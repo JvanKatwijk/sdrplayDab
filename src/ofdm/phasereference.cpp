@@ -115,8 +115,8 @@ float	lbuf [T_u];
 	}
 
 	if (++displayCounter > framesperSecond / 4) {
-	   response     -> putDataIntoBuffer (lbuf, T_u);
-	   showImpulse (T_u);
+	   response     -> putDataIntoBuffer (lbuf, T_u / 2);
+	   showImpulse (T_u / 2);
 	   displayCounter	= 0;
 	}
 /**

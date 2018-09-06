@@ -9,7 +9,7 @@
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation version 2 of the License.
  *
- *    srplayDab is distributed in the hope that it will be useful,
+ *    sdrplayDab is distributed in the hope that it will be useful,
  *    but WITHOUT ANY WARRANTY; without even the implied warranty of
  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *    GNU General Public License for more details.
@@ -419,12 +419,12 @@ static	int teller	= 0;
 	                     gains. curr,
 	                     ifGainRed - GRdB,
 	                     p -> errorCodes (err). toLatin1 (). data ());
-	            else
-	              fprintf (stderr, "geen error updating Gainreduction: GRdB = %d, lnaState = %d, curr = %f, new ifGainred %d\n",
-	                     - GRdB,
-	                     p -> lnaState,
-	                     gains. curr,
-	                     ifGainRed - GRdB);
+//	            else
+//	              fprintf (stderr, "geen error updating Gainreduction: GRdB = %d, lnaState = %d, curr = %f, new ifGainred %d\n",
+//	                     - GRdB,
+//	                     p -> lnaState,
+//	                     gains. curr,
+//	                     ifGainRed - GRdB);
 	         }
 	         p -> averageValue -> display (str);
 	         p -> nullValue -> display (lvv);
