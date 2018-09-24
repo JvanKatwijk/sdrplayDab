@@ -419,12 +419,12 @@ void	dabProcessor::reset_msc (void) {
 
 void	dabProcessor::set_audioChannel (audiodata *d,
 	                                      RingBuffer<int16_t> *b) {
-	my_mscHandler. set_audioChannel (d, b);
+	my_mscHandler. set_Channel (d, b, (RingBuffer<uint8_t> *)nullptr);
 }
 
 void	dabProcessor::set_dataChannel (packetdata *d,
 	                                      RingBuffer<uint8_t> *b) {
-	my_mscHandler. set_dataChannel (d, b);
+	my_mscHandler. set_Channel (d, (RingBuffer<int16_t> *)nullptr, b);
 }
 
 uint8_t	dabProcessor::get_ecc		(void) {
