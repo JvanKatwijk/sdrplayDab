@@ -67,7 +67,7 @@ sdrplaySelect	*sdrplaySelector;
 	sdrplaySettings			= s;
 	this	-> myFrame		= new QFrame (NULL);
 	setupUi (this -> myFrame);
-//	this	-> myFrame	-> show ();
+	this	-> myFrame	-> show ();
 	antennaSelector		-> hide ();
 	tunerSelector		-> hide ();
 	this	-> inputRate		= Khz (2048);
@@ -248,13 +248,13 @@ ULONG APIkeyValue_length = 255;
 	      lnaGainSetting	-> setRange (0, 3);
 	      deviceLabel	-> setText ("RSP-I");
 	      nrBits		= 12;
-	      denominator	= 4096;
+	      denominator	= 2048;
 	      break;
 	   case 2:
 	      lnaGainSetting	-> setRange (0, 8);
 	      deviceLabel	-> setText ("RSP-II");
 	      nrBits		= 12;
-	      denominator	= 4096;
+	      denominator	= 2048;
 	      antennaSelector -> show ();
 	      err = my_mir_sdr_RSPII_AntennaControl (mir_sdr_RSPII_ANTENNA_A);
 	      if (err != mir_sdr_Success) 
@@ -278,7 +278,7 @@ ULONG APIkeyValue_length = 255;
 	      lnaGainSetting	-> setRange (0, 9);
 	      deviceLabel	-> setText ("RSP-1A");
 	      nrBits		= 14;
-	      denominator	= 16384;
+	      denominator	= 8192;
 	      break;
 	}
 
@@ -382,7 +382,6 @@ static	int teller	= 0;
 	   if (res == DEVICE_UPDATE) {
 	      mir_sdr_ErrT err;
 	      mir_sdr_GainValuesT gains;
-	      volatile int refValue	= p -> gain_setpoint -> value ();
 	      int	offset;
 	      float	lowVal;
 	      float	highVal;
@@ -396,28 +395,26 @@ static	int teller	= 0;
 	         float str = 10 * log10 ((highVal + 0.005)  / denominator);
 	         float lvv = 10 * log10 ((lowVal  + 0.005)  / denominator);
 //
-//	offset in gain reduction setting:
-	         int GRdB = p -> gain_setpoint -> value () - str;
-//
-//	current ig gain reduction value
-	         int ifGainRed	= gains. curr - get_lnaGRdB (p -> hwVersion,
+//	we compute the "error" in the gain setting,
+//	and we derive the GRdB value needed to correct that
+	         int gainOffset	= p -> gain_setpoint -> value () - str;
+	         int GRdB	= gains. curr - get_lnaGRdB (p -> hwVersion,
 	                                                     p -> lnaState);
-//	check for reasonable offset value
-	         if (GRdB < -20) GRdB = -20;
-	         if (GRdB >  20) GRdB =  20;
-	         if (ifGainRed - GRdB < 20)
-	            GRdB = ifGainRed - 20;
-	         if (ifGainRed - GRdB > 59)
-	            GRdB = ifGainRed - 59;
+	         if (GRdB + gainOffset < 20)
+	            GRdB = 20;
+	         else
+	         if (GRdB + gainOffset > 59)
+	            GRdB = 59;
+	         else
+	            GRdB = GRdB + gainOffset;
 	         if (GRdB != 0) {
-	            err = p -> my_mir_sdr_RSP_SetGr (-GRdB,
-	                                             p -> lnaState, 0 , 0);
+	            err = p -> my_mir_sdr_RSP_SetGr (GRdB,
+	                                             p -> lnaState, 1 , 0);
 	            if (err != mir_sdr_Success)
-	               fprintf (stderr, "error updating GainReduction: GRdb = %d, lnaState = %d, curr = %f, new ifGainRed %d (%s)\n",
-	                     - GRdB,
+	               fprintf (stderr, "error updating GainReduction: GRdb = %d, lnaState = %d, curr = %f %d (%s)\n",
+	                     GRdB,
 	                     p -> lnaState,
 	                     gains. curr,
-	                     ifGainRed - GRdB,
 	                     p -> errorCodes (err). toLatin1 (). data ());
 //	            else
 //	              fprintf (stderr, "geen error updating Gainreduction: GRdB = %d, lnaState = %d, curr = %f, new ifGainred %d\n",
