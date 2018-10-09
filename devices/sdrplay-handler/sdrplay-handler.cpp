@@ -350,7 +350,6 @@ mir_sdr_ErrT err;
 	                              errorCodes (err). toLatin1 (). data ());
 	else
 	   lnaGRdBDisplay	-> display (get_lnaGRdB (hwVersion, lnaState));
-	
 }
 
 static
@@ -386,7 +385,7 @@ static	int teller	= 0;
 	      float	lowVal;
 	      float	highVal;
 	      p -> base -> update_data (&offset, &lowVal, &highVal);
-	      if (++ teller > 5) {
+	      if (++ teller > 20) {
 	         p -> setOffset (offset);
 	         err = p -> my_mir_sdr_GetCurrentGain (&gains);
 	         if (err != mir_sdr_Success)
@@ -397,32 +396,30 @@ static	int teller	= 0;
 //
 //	we compute the "error" in the gain setting,
 //	and we derive the GRdB value needed to correct that
-	         int gainOffset	= p -> gain_setpoint -> value () - str;
+	         int gainCorr	= p -> gain_setpoint -> value () - str;
+	         if (gainCorr < - 20)
+	            gainCorr = -20;
+	         if (gainCorr > 20)
+	            gainCorr = 20;
 	         int GRdB	= gains. curr - get_lnaGRdB (p -> hwVersion,
 	                                                     p -> lnaState);
-	         if (GRdB + gainOffset < 20)
+	         if (GRdB + gainCorr < 20)
 	            GRdB = 20;
 	         else
-	         if (GRdB + gainOffset > 59)
+	         if (GRdB + gainCorr > 59)
 	            GRdB = 59;
 	         else
-	            GRdB = GRdB + gainOffset;
-	         if (GRdB != 0) {
+	            GRdB = GRdB + gainCorr;
+	         if (GRdB != 0) 
 	            err = p -> my_mir_sdr_RSP_SetGr (GRdB,
 	                                             p -> lnaState, 1 , 0);
-	            if (err != mir_sdr_Success)
-	               fprintf (stderr, "error updating GainReduction: GRdb = %d, lnaState = %d, curr = %f %d (%s)\n",
+	         if (err != mir_sdr_Success)
+	            fprintf (stderr, "error updating GainReduction: GRdb = %d, lnaState = %d, curr = %f %d (%s)\n",
 	                     GRdB,
 	                     p -> lnaState,
 	                     gains. curr,
+	                     gainCorr,
 	                     p -> errorCodes (err). toLatin1 (). data ());
-//	            else
-//	              fprintf (stderr, "geen error updating Gainreduction: GRdB = %d, lnaState = %d, curr = %f, new ifGainred %d\n",
-//	                     - GRdB,
-//	                     p -> lnaState,
-//	                     gains. curr,
-//	                     ifGainRed - GRdB);
-	         }
 	         p -> averageValue -> display (str);
 	         p -> nullValue -> display (lvv);
 	         p -> reportedGain -> display (gains. curr);
@@ -438,19 +435,25 @@ static	int teller	= 0;
 	         fprintf (stderr, "error getting gain values %s\n",
 	                           p -> errorCodes (err). toLatin1 (). data ());
 	      float str	= 10 * log10 ((p -> base -> initialSignal () + 0.005) / denominator);
-	      int GRdB = str - (p -> gain_setpoint -> value ()); 
-	      if (GRdB >  20) GRdB =  20;
-	      if (GRdB < -20) GRdB = -20;
-	      GRdB += gains. curr -  get_lnaGRdB (p -> hwVersion,
-	                                          p -> lnaState);
-
-	      if ((GRdB >= 20) && (GRdB <= 59)) {
-	         err = p -> my_mir_sdr_RSP_SetGr (GRdB, p -> lnaState, 1 , 0);
-	         if (err != mir_sdr_Success) 
-	            fprintf (stderr, "error setting gainReduction at search phase (%d) %s\n",
-	                                      GRdB,
+	      int gainCorr = p -> gain_setpoint -> value () - str; 
+	      if (gainCorr < -20)
+	         gainCorr = -20;
+	      if (gainCorr > 20)
+	         gainCorr = 20;
+	      int GRdB = gains. curr -  get_lnaGRdB (p -> hwVersion,
+	                                             p -> lnaState);
+	      if (GRdB + gainCorr < 20)
+	         GRdB = 20;
+	      else
+	      if (GRdB + gainCorr > 59)
+	         GRdB = 59;
+	      else
+	         GRdB = GRdB + gainCorr;
+	      err = p -> my_mir_sdr_RSP_SetGr (GRdB, p -> lnaState, 1 , 0);
+	      if (err != mir_sdr_Success) 
+	         fprintf (stderr, "error setting gainReduction at search phase (%d) %s\n",
+	                                   GRdB,
 	                               p -> errorCodes (err). toLatin1 (). data ());
-	      }
 	   }
 	}
 	(void)	firstSampleNum;

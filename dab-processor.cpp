@@ -36,7 +36,7 @@
 #define	N	5
 
 static
-int	tii_delay	= 20;
+int	tii_delay	= 10;
 static
 int	tii_counter	= 0;
 
@@ -127,7 +127,7 @@ int32_t	i;
 	         myRadioInterface, SLOT (show_tii (int)));
 	connect (this, SIGNAL (No_Signal_Found (void)),
 	         myRadioInterface, SLOT (No_Signal_Found (void)));
-
+	my_TII_Detector. reset ();
 }
 
 	dabProcessor::~dabProcessor	(void) {
@@ -339,7 +339,7 @@ static	int dabCounter	= 0;
 //	here, we skip the next null period
 	   case PREPARE_FOR_SKIP_NULL_PERIOD:
 	      nullCount		= 0;
-	      dipValue		= 0;
+	      dipValue		= jan_abs (symbol);
 	      ofdmBuffer [nullCount ++] = symbol;
 	      processorMode	= SKIP_NULL_PERIOD;
 	      break;
@@ -351,12 +351,9 @@ static	int dabCounter	= 0;
 	      if (nullCount >= T_null - 1) {
 	         processorMode = END_OF_DIP;
 	         dipValue	/= T_null;
-	         if ((dabMode == 1) &&
-	              wasSecond (my_ficHandler. get_CIFcount (), &params)) {
-	            handle_tii_detection (ofdmBuffer);
-	         }
-	       }
-	       break;
+	         handle_tii_detection (ofdmBuffer);
+	      }
+	      break;
 	}
 	return retValue;
 }
@@ -475,14 +472,19 @@ bool    dabProcessor::wasSecond (int16_t cf, dabParams *p) {
 
 void	dabProcessor::handle_tii_detection
 	                      (std::vector<std::complex<float>> b) {
-	my_TII_Detector. addBuffer (ofdmBuffer);
-	if (++tii_counter >= tii_delay) {
-	   int16_t mainId      = -1;
-	   int16_t subId       = -1;
-	   my_TII_Detector. processNULL (&mainId, &subId);
-	   if (mainId > 0)
-	      showCoordinates (mainId, subId);
-	   tii_counter	= 0;
+	if (dabMode != 1)
+	   return;
+	if (wasSecond (my_ficHandler. get_CIFcount (), &params)) {
+	   my_TII_Detector. addBuffer (ofdmBuffer);
+	   if (++tii_counter >= tii_delay) {
+	      int16_t mainId      = -1;
+	      int16_t subId       = -1;
+	      my_TII_Detector. processNULL (&mainId, &subId);
+	      if (mainId > 0)
+	         showCoordinates (mainId, subId);
+	      tii_counter	= 0;
+	      my_TII_Detector. reset ();
+	   }
 	}
 
 	if ((tii_counter & 02) != 0) {
