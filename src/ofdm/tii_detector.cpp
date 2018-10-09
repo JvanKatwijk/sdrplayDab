@@ -281,7 +281,7 @@ float	corrTable [24];
 	for (i = 1; i < 24; i ++) {
 	   corrTable [i] = correlate (theBuffer,
 	                              startCarrier + 2 * i,
-	                              pattern);
+	                              pattern, 2);
 	}
 
 	for (i = 1; i < 24; i ++) {
@@ -361,7 +361,7 @@ float	maxValues	[MAX_TABLE];
 	         continue;
 	      float corr = correlate (theBuffer,
 	                              startCarrier,
-	                              theTable [i]. pattern);
+	                              theTable [i]. pattern, 2);
 	      if (corr > maxCorr) {
 	         maxCorr = corr;
 	         main_1		= i;
@@ -394,7 +394,7 @@ float	maxValues	[MAX_TABLE];
 //
 float	TII_Detector::correlate (std::vector<complex<float>> v,
 	                         int16_t	startCarrier,
-	                         uint64_t	pattern) {
+	                         uint64_t	pattern, int segments) {
 static bool flag = true;
 int16_t	realIndex;
 int16_t	i;
@@ -408,7 +408,7 @@ float	avg	= 0;
 	carrier		= startCarrier;
 	s1		= abs (real (v [(T_u + startCarrier) % T_u] *
 	                             conj (v [(T_u + startCarrier + 1) % T_u])));
-	for (i = 0; i < 15; i ++) {
+	for (i = 0; i < 4 * segments; i ++) {
 	   carrier	+= ((pattern >> 56) & 0xF) * 48;
 	   realIndex	= carrier < 0 ? T_u + carrier :  carrier + 1;
 	   float x	= abs (real (v [realIndex] *
