@@ -36,7 +36,7 @@
 #define	N	5
 
 static
-int	tii_delay	= 10;
+int	tii_delay	= 5;
 static
 int	tii_counter	= 0;
 
@@ -482,6 +482,8 @@ void	dabProcessor::handle_tii_detection
 	      my_TII_Detector. processNULL (&mainId, &subId);
 	      if (mainId > 0)
 	         showCoordinates (mainId, subId);
+	      tiiBuffer -> putDataIntoBuffer (ofdmBuffer. data (), T_u);
+              show_tii (1);
 	      tii_counter	= 0;
 	      my_TII_Detector. reset ();
 	   }

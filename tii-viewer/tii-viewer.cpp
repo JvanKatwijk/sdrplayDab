@@ -166,9 +166,9 @@ int16_t	averageCount	= 3;
 }
 
 void	tiiViewer::ViewSpectrum (double *X_axis,
-		                       double *Y1_value,
-	                               double amp,
-	                               int32_t marker) {
+		                 double *Y1_value,
+	                         double amp,
+	                         int32_t marker) {
 uint16_t	i;
 float	amp1	= amp / 100;
 	
