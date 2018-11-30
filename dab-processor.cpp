@@ -36,7 +36,7 @@
 #define	N	5
 
 static
-int	tii_delay	= 5;
+int	tii_delay	= 10;
 static
 int	tii_counter	= 0;
 

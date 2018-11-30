@@ -487,9 +487,10 @@ QString s;
 	   return;
 
 	(void)v;
-	ensembleId		-> display (id);
-	ensembleLabel		= v;
-	ensembleName		-> setText (v);
+	ensembleId	-> display (id);
+	ensembleLabel	= v;
+	ensembleName    -> setAlignment(Qt::AlignCenter);
+	ensembleName	-> setText (v);
 	my_dabProcessor	-> coarseCorrectorOff ();
 	Yes_Signal_Found ();
 }
@@ -946,6 +947,7 @@ void	RadioInterface::selectService (QString s) {
 	                                    channelSelector -> currentText ());
 	         show_techData (ensembleLabel, s,
 	                              frequency / 1000000.0, &d);
+	         serviceLabel -> setAlignment(Qt::AlignCenter);
 	         serviceLabel -> setText (s);
 	         my_dabProcessor -> set_audioChannel (&d, audioBuffer);
 	         for (int i = 1; i < 10; i ++) {
