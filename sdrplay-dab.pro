@@ -11,9 +11,9 @@ CONFIG		+= console
 QMAKE_CXXFLAGS	+= -std=c++11
 QMAKE_CFLAGS	+=  -O3 -ffast-math
 QMAKE_CXXFLAGS	+=  -O3 -ffast-math
-#QMAKE_CFLAGS	+=  -g
-#QMAKE_CXXFLAGS	+=  -g
-#QMAKE_LFLAGS	+=  -g
+#QMAKE_CFLAGS	+=  -pg
+#QMAKE_CXXFLAGS	+=  -pg
+#QMAKE_LFLAGS	+=  -pg
 QMAKE_CXXFLAGS += -isystem $$[QT_INSTALL_HEADERS]
 RC_ICONS	=  sdrplay-dab.ico
 RESOURCES	+= resources.qrc
@@ -33,7 +33,8 @@ DEPENDPATH += . \
 	      ./src/backend/data/journaline \
 	      ./src/output \
 	      ./src/support \
-	      ./src/support/viterbi_768 \
+	      ./src/support/viterbi-jan \
+#	      ./src/support/viterbi-handler \
 	      ./devices \
 	      ./devices/wavfiles \
 	      ./devices/sdrplay-handler \
@@ -66,7 +67,8 @@ INCLUDEPATH += . \
 	      ./includes/backend/data/journaline \
 	      ./includes/output \
 	      ./includes/support \
-	      ./includes/support/viterbi_768 \
+	      ./includes/support/viterbi-jan \
+#	      ./includes/support/viterbi-handler \
 	      ./includes/scopes-qwt6 \
               ./spectrum-viewer \
 	      ./impulse-viewer \
@@ -126,12 +128,11 @@ HEADERS += ./radio.h \
 	   ./includes/backend/data/journaline/dabdgdec_impl.h \
 	   ./includes/backend/data/journaline/newsobject.h \
 	   ./includes/backend/data/journaline/NML.h \
-#	   ./includes/output/fir-filters.h \
 	   ./includes/output/audio-base.h \
 	   ./includes/output/newconverter.h \
 	   ./includes/output/audiosink.h \
-#	   ./includes/support/viterbi.h \
-	   ./includes/support/viterbi_768/viterbi-768.h \
+	   ./includes/support/viterbi-jan/viterbi-handler.h \
+#	   ./includes/support/viterbi-handler/viterbi-handler.h \
            ./includes/support/fft-handler.h \
 	   ./includes/support/ringbuffer.h \
 	   ./includes/support/Xtan2.h \
@@ -206,12 +207,11 @@ SOURCES += ./main.cpp \
 	   ./src/backend/data/journaline/dabdgdec_impl.c \
 	   ./src/backend/data/journaline/newsobject.cpp \
 	   ./src/backend/data/journaline/NML.cpp \
-#	   ./src/output/fir-filters.cpp \
 	   ./src/output/audio-base.cpp \
 	   ./src/output/newconverter.cpp \
 	   ./src/output/audiosink.cpp \
-#	   ./src/support/viterbi.cpp \
-	   ./src/support/viterbi_768/viterbi-768.cpp \
+	   ./src/support/viterbi-jan/viterbi-handler.cpp \
+#	   ./src/support/viterbi-handler/viterbi-handler.cpp \
            ./src/support/fft-handler.cpp \
 	   ./src/support/Xtan2.cpp \
 	   ./src/support/dab-params.cpp \
@@ -267,12 +267,13 @@ DEFINES		+= MSC_DATA__		# use at your own risk
 DEFINES		+= PRESET_NAME
 DEFINES		+= __THREADED_BACKEND
 
+# DO NOT USE THESE WITHOUT HAVING READ THE NOTE ON viterbi
 # you might select SSE if you are compiling on a x64 with SSE support
 # and you might select NEON if you are compiling for an arm (however
 # have a look at the config section for neon then)
 #CONFIG	+= NEON_RPI2
 #CONFIG	+= NEON_RPI3
-CONFIG	+= SSE
+#CONFIG	+= SSE
 #CONFIG	+= NO_SSE
 }
 #
@@ -316,7 +317,7 @@ LIBS		+= -lz
 #LIBS		+= -lqwt
 LIBS		+= -lqwt-qt5
 
-CONFIG		+= NO_SSE
+#CONFIG		+= NO_SSE
 
 #very experimental, simple server for connecting to a tdc handler
 #CONFIG		+= datastreamer
@@ -380,28 +381,28 @@ NEON_RPI2	{
 	DEFINES		+= NEON_AVAILABLE
 	QMAKE_CFLAGS	+=  -mcpu=cortex-a7 -mfloat-abi=hard -mfpu=neon-vfpv4  
 	QMAKE_CXXFLAGS	+=  -mcpu=cortex-a7 -mfloat-abi=hard -mfpu=neon-vfpv4  
-	HEADERS		+= ./src/support/viterbi_768/spiral-neon.h
-	SOURCES		+= ./src/support/viterbi_768/spiral-neon.c
+	HEADERS		+= ./src/support/viterbi-handler/spiral-neon.h
+	SOURCES		+= ./src/support/viterbi-handler/spiral-neon.c
 }
 
-# for RPI3 use:
+# for RPI3 use (for me, it often fails though_
 NEON_RPI3	{
 	DEFINES		+= NEON_AVAILABLE
 #	QMAKE_CFLAGS	+=  -mcpu=cortex-a53 -mfloat-abi=hard -mfpu=neon-fp-armv8 -mneon-for-64bits
 #	QMAKE_CXXFLAGS	+=  -mcpu=cortex-a53 -mfloat-abi=hard -mfpu=neon-fp-armv8 -mneon-for-64bits
-	HEADERS		+= ./src/support/viterbi_768/spiral-neon.h
-	SOURCES		+= ./src/support/viterbi_768/spiral-neon.c
+	HEADERS		+= ./src/support/viterbi-handler/spiral-neon.h
+	SOURCES		+= ./src/support/viterbi-handler/spiral-neon.c
 }
 
 SSE	{
 	DEFINES		+= SSE_AVAILABLE
-	HEADERS		+= ./src/support/viterbi_768/spiral-sse.h
-	SOURCES		+= ./src/support/viterbi_768/spiral-sse.c
+	HEADERS		+= ./src/support/viterbi-handler/spiral-sse.h
+	SOURCES		+= ./src/support/viterbi-handler/spiral-sse.c
 }
 
 NO_SSE	{
-	HEADERS		+= ./src/support/viterbi_768/spiral-no-sse.h
-	SOURCES		+= ./src/support/viterbi_768/spiral-no-sse.c
+	HEADERS		+= ./src/support/viterbi-handler/spiral-no-sse.h
+	SOURCES		+= ./src/support/viterbi-handler/spiral-no-sse.c
 }
 
 
