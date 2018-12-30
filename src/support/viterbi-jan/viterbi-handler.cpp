@@ -201,7 +201,7 @@ int	i;
 
 	for (i = 0; i < numofStates; i++) {
 	   if (transCosts [blockLength + 6 - 1][i] < minimalCosts) {
-	      minimalCosts = transCosts [blockLength][i];
+	      minimalCosts = transCosts [blockLength + 6 - 1][i];
 	      bestState = i;
 	   }
 	}
