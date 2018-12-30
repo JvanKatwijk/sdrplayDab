@@ -40,7 +40,6 @@ int	i, j;
 	this	-> blockLength	= blockLength;
 	(void)flag;
 
-	fprintf (stderr, "blockLength = %d\n", this -> blockLength);
 	transCosts	= new int *[blockLength + 6 + 1];
 	history		= new int *[blockLength + 6 + 1];
 	stateSequence	= new int [blockLength + 6 + 1];
@@ -143,6 +142,8 @@ int	i;
            int16_t	sym_1 = (int16_t)(- sym [4 * (i - 1) + 1]);
            int16_t	sym_2 = (int16_t)(- sym [4 * (i - 1) + 2]);
            int16_t	sym_3 = (int16_t)(- sym [4 * (i - 1) + 3]);
+	   int	*transCosts_i	= transCosts [i];
+	   int	*history_i	= history [i];
 
 	   computeCostTable (sym_0, sym_1, sym_2, sym_3);
            for (int cState = 0; cState < numofStates / 2; cState ++) {
@@ -159,11 +160,11 @@ int	i;
 	      costs_1 = transCosts [i - 1] [prev_1] +
 	                costTable [indexTable [prev_1]];
 	      if (costs_0 < costs_1) {
-	         transCosts [i] [cState] = costs_0;
-	         history [i][cState] = prev_0;
+	         transCosts_i [cState] = costs_0;
+	         history_i    [cState] = prev_0;
 	      } else {
-	         transCosts [i] [cState] = costs_1;
-	         history [i][cState] = prev_1;
+	         transCosts_i  [cState] = costs_1;
+	         history_i    [cState] = prev_1;
 	      }
 	   }
 
@@ -184,11 +185,11 @@ int	i;
 	      costs_1 = transCosts [i - 1] [prev_1] +
                               costTable [indexTable [prev_1 + numofStates]];
 	      if (costs_0 < costs_1) {
-	         transCosts [i] [cState] = costs_0;
-	         history [i] [cState] = prev_0;
+	         transCosts_i [cState] = costs_0;
+	         history_i    [cState] = prev_0;
 	      } else {
-	         transCosts [i] [cState] = costs_1;
-	         history [i][cState] = prev_1;
+	         transCosts_i [cState] = costs_1;
+	         history_i    [cState] = prev_1;
               }
            }
 	}
@@ -205,7 +206,7 @@ int	i;
 	   }
 	}
 
-	stateSequence [blockLength] = bestState;
+	stateSequence [blockLength + 6 - 1] = bestState;
 /*
  *      Trace backgoes back to state 0, and builds up the
  *      sequence of decoded symbols

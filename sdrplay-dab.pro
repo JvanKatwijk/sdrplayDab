@@ -11,9 +11,9 @@ CONFIG		+= console
 QMAKE_CXXFLAGS	+= -std=c++11
 QMAKE_CFLAGS	+=  -O3 -ffast-math
 QMAKE_CXXFLAGS	+=  -O3 -ffast-math
-#QMAKE_CFLAGS	+=  -pg
-#QMAKE_CXXFLAGS	+=  -pg
-#QMAKE_LFLAGS	+=  -pg
+QMAKE_CFLAGS	+=  -pg
+QMAKE_CXXFLAGS	+=  -pg
+QMAKE_LFLAGS	+=  -pg
 QMAKE_CXXFLAGS += -isystem $$[QT_INSTALL_HEADERS]
 RC_ICONS	=  sdrplay-dab.ico
 RESOURCES	+= resources.qrc
