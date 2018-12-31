@@ -11,9 +11,9 @@ CONFIG		+= console
 QMAKE_CXXFLAGS	+= -std=c++11
 QMAKE_CFLAGS	+=  -O3 -ffast-math
 QMAKE_CXXFLAGS	+=  -O3 -ffast-math
-QMAKE_CFLAGS	+=  -pg
-QMAKE_CXXFLAGS	+=  -pg
-QMAKE_LFLAGS	+=  -pg
+#QMAKE_CFLAGS	+=  -pg
+#QMAKE_CXXFLAGS	+=  -pg
+#QMAKE_LFLAGS	+=  -pg
 QMAKE_CXXFLAGS += -isystem $$[QT_INSTALL_HEADERS]
 RC_ICONS	=  sdrplay-dab.ico
 RESOURCES	+= resources.qrc
@@ -33,8 +33,8 @@ DEPENDPATH += . \
 	      ./src/backend/data/journaline \
 	      ./src/output \
 	      ./src/support \
-#	      ./src/support/viterbi-jan \
-	      ./src/support/viterbi-handler \
+	      ./src/support/viterbi-jan \
+#	      ./src/support/viterbi-handler \
 	      ./devices \
 	      ./devices/wavfiles \
 	      ./devices/sdrplay-handler \
@@ -67,8 +67,8 @@ INCLUDEPATH += . \
 	      ./includes/backend/data/journaline \
 	      ./includes/output \
 	      ./includes/support \
-#	      ./includes/support/viterbi-jan \
-	      ./includes/support/viterbi-handler \
+	      ./includes/support/viterbi-jan \
+#	      ./includes/support/viterbi-handler \
 	      ./includes/scopes-qwt6 \
               ./spectrum-viewer \
 	      ./impulse-viewer \
@@ -131,8 +131,8 @@ HEADERS += ./radio.h \
 	   ./includes/output/audio-base.h \
 	   ./includes/output/newconverter.h \
 	   ./includes/output/audiosink.h \
-#	   ./includes/support/viterbi-jan/viterbi-handler.h \
-	   ./includes/support/viterbi-handler/viterbi-handler.h \
+	   ./includes/support/viterbi-jan/viterbi-handler.h \
+#	   ./includes/support/viterbi-handler/viterbi-handler.h \
            ./includes/support/fft-handler.h \
 	   ./includes/support/ringbuffer.h \
 	   ./includes/support/Xtan2.h \
@@ -210,8 +210,8 @@ SOURCES += ./main.cpp \
 	   ./src/output/audio-base.cpp \
 	   ./src/output/newconverter.cpp \
 	   ./src/output/audiosink.cpp \
-#	   ./src/support/viterbi-jan/viterbi-handler.cpp \
-	   ./src/support/viterbi-handler/viterbi-handler.cpp \
+	   ./src/support/viterbi-jan/viterbi-handler.cpp \
+#	   ./src/support/viterbi-handler/viterbi-handler.cpp \
            ./src/support/fft-handler.cpp \
 	   ./src/support/Xtan2.cpp \
 	   ./src/support/dab-params.cpp \
@@ -317,6 +317,7 @@ LIBS		+= -lz
 #LIBS		+= -lqwt
 LIBS		+= -lqwt-qt5
 
+#READ THE README_VITERBI BEFORE CHANGING THIS
 #CONFIG		+= NO_SSE
 
 #very experimental, simple server for connecting to a tdc handler
