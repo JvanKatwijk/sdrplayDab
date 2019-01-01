@@ -5,9 +5,9 @@
 ######################################################################
 
 TEMPLATE	= app
-TARGET		= sdrplay-dab
+TARGET		= sdrplay-dab-1.1
 QT		+= widgets 
-CONFIG		+= console
+CONFIG		-= console
 QMAKE_CXXFLAGS	+= -std=c++11
 QMAKE_CFLAGS	+=  -O3 -ffast-math
 QMAKE_CXXFLAGS	+=  -O3 -ffast-math
@@ -273,14 +273,13 @@ DEFINES		+= __THREADED_BACKEND
 # have a look at the config section for neon then)
 #CONFIG	+= NEON_RPI2
 #CONFIG	+= NEON_RPI3
-CONFIG	+= SSE
+#CONFIG	+= SSE
 #CONFIG	+= NO_SSE
 }
 #
 # an attempt to have it run under W32 through cross compilation
 win32 {
-#DESTDIR	= ../../../dab-win
-DESTDIR		= ../../windows-bin
+DESTDIR		= ../../windows-sdrplay
 # includes in mingw differ from the includes in fedora linux
 
 exists ("./.git") {
