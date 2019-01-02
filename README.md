@@ -10,12 +10,21 @@ for recognizing DAB frames than used in qt-dab.
 ![sdrplayDab](/sdrplay-dab-2.png?raw=true)
 
 
-The executable for Windows is - together with other programs
-compiled for Windows and libraries needed - in a zipped folder,
-maintained in the releases section of Qt-DAB, for Linux, however,
-one has to create an executable.
+-----------------------------------------------------------------------------
+Windows
+------------------------------------------------------------------------------
 
-Just follow the approach sketched for Qt-DAB.
+For Windows, the releases section contains an *installer*, setup-sdrplayDab.exe.
+The installer will install the executable of the program together with the required
+dll's. Note that the installer will call the official installer for the dll implementing
+the api to get access to the SDRplay device
+
+------------------------------------------------------------------------------------
+Linux
+------------------------------------------------------------------------------------
+
+For Linux, however, one has to create an executable. The approach is the same as for Qt-DAB
+(although one obviously does not need to install airspy or dabstick handlers).
 
 
 ------------------------------------------------------------------------------
