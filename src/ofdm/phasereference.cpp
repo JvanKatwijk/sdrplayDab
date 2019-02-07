@@ -32,9 +32,10 @@
 
 	phaseReference::phaseReference (RadioInterface *mr,
 	                                uint8_t		dabMode,
-	                                RingBuffer<float> *b,
 	                                int16_t		threshold,
-	                                int16_t		diff_length):
+	                                int16_t		diff_length,
+	                                int16_t		depth,
+	                                RingBuffer<float> *b):
 	                                     phaseTable (dabMode),
 	                                     params (dabMode),
 	                                     my_fftHandler (dabMode) {
@@ -45,6 +46,7 @@ float	Phi_k;
 	this	-> threshold	= threshold;
 	this	-> diff_length	= diff_length;
 	this	-> T_u		= params. get_T_u ();
+	this	-> depth	= depth;
 	this	-> carriers	= params. get_carriers ();
 
 	refTable.		resize (T_u);
@@ -68,9 +70,11 @@ float	Phi_k;
 //	the ones with a null
 	for (i = 1; i <= diff_length; i ++) 
 	   phaseDifferences [i - 1] = abs (arg (refTable [(T_u + i) % T_u] *
-                                 conj (refTable [(T_u + i + 1) % T_u])));
+	                         conj (refTable [(T_u + i + 1) % T_u])));
 	connect (this, SIGNAL (showImpulse (int)),
 	         mr,   SLOT   (showImpulse (int)));
+	connect (this, SIGNAL (showIndex   (int)),
+	         mr,   SLOT   (showIndex   (int)));
 }
 
 	phaseReference::~phaseReference (void) {
@@ -86,6 +90,25 @@ float	Phi_k;
   *	looking for.
   */
 
+static float prev_angle	= 0;
+
+void	phaseReference::computeAngle (std::vector<std::complex<float>> v) {
+std::complex<float> sum	= std::complex<float>(0, 0);
+int	i;
+float	angle;
+	memcpy (fft_buffer, v. data (), T_u * sizeof (std::complex<float>));
+	my_fftHandler. do_FFT ();
+//
+//      into the frequency domain, now correlate
+	for (i = 0; i < T_u; i ++)
+	   sum +=  fft_buffer [i] * conj (refTable [i]);
+
+	angle = arg (sum);
+	float res = arg (sum) - prev_angle;
+	fprintf (stderr, "angle %f\n", res < 0 ? res + 2 * M_PI : res);
+	prev_angle	= angle;
+}
+
 int32_t	phaseReference::findIndex (std::vector <std::complex<float>> v) {
 int32_t	i;
 int32_t	maxIndex	= -1;
@@ -93,6 +116,8 @@ int32_t	oldIndex	= -1;
 float	sum		= 0;
 float	Max		= -1000;
 float	lbuf [T_u];
+float	mbuf [T_u];
+std::vector<int> resultVector;
 
 	memcpy (fft_buffer, v. data (), T_u * sizeof (std::complex<float>));
 	my_fftHandler. do_FFT ();
@@ -107,6 +132,7 @@ float	lbuf [T_u];
   */
 	for (i = 0; i < T_u; i ++) {
 	   lbuf [i] = jan_abs (fft_buffer [i]);
+	   mbuf [i] = lbuf [i];
 	   sum	+= lbuf [i];
 	   if (lbuf [i] > Max) {
 	      maxIndex = i;
@@ -114,19 +140,43 @@ float	lbuf [T_u];
 	   }
 	}
 
-	if (++displayCounter > framesperSecond / 4) {
-	   response     -> putDataIntoBuffer (lbuf, T_u / 2);
-	   showImpulse (T_u / 2);
-	   displayCounter	= 0;
-	}
-/**
-  *	that gives us a basis for defining the actual threshold value
-  */
 	if (Max < threshold * sum / T_u)
-	   return  - abs (Max * T_u / sum) - 1;
-	else {
-	   return maxIndex;	
+	   return (- abs (Max * T_u / sum) - 1);
+	else
+	   resultVector. push_back (maxIndex);
+
+	for (int k = 0; k < depth; k ++) {
+	   float MMax = 4 * threshold * sum / T_u;
+	   int  lIndex = -1;
+	   for (i = 0; i < T_u / 2; i ++) {
+	      if (lbuf [i] > MMax) {
+	         MMax = lbuf [i];
+	         lIndex = i;
+	      }
+	   }
+	   if (lIndex > 0) {
+	      resultVector . push_back (lIndex);
+	      for (i = lIndex - 15; i < lIndex + 15; i ++)
+	         lbuf [i] = 0;
+	   }
+	   else
+	      break;
 	}
+
+	if (response != NULL) {
+	   if (++displayCounter > framesperSecond / 4) {
+	      response  -> putDataIntoBuffer (mbuf, T_u);
+	      showImpulse (T_u);
+	      displayCounter    = 0;
+	      if (resultVector. at (0) > 0) {
+	         showIndex (-1);
+	         for (i = 1; i < resultVector. size (); i ++)
+	            showIndex (resultVector. at (i));
+	         showIndex (0);
+	      }
+	   }
+	}
+	return resultVector. at (0);
 }
 
 //	We investigate a sequence of phasedifferences that

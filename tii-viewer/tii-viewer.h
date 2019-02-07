@@ -46,6 +46,7 @@ public:
 	                                         RingBuffer<std::complex<float>> *);
 			~tiiViewer		(void);
 	void		showSpectrum		(int32_t);
+	void		showSecondaries		(std::vector<int>);
 	void		setBitDepth		(int16_t);
 	void		show			(void);
 	void		hide			(void);

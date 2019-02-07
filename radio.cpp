@@ -112,6 +112,9 @@ QString h;
 	diff_length	=
 	           dabSettings	-> value ("diff_length", DIFF_LENGTH). toInt ();
 
+	int	tii_depth	= dabSettings -> value ("tii_depth", 1). toInt ();
+        int	echo_depth	= dabSettings -> value ("echo_depth", 1). toInt ();
+
 	dataBuffer		= new RingBuffer<uint8_t>(32768);
 ///	The default, most likely to be overruled
 #ifdef	_SEND_DATAGRAM_
@@ -286,6 +289,7 @@ QString h;
 	   exit (21);
 	}
 
+	secondariesVector. resize (0);
 	connectGUI ();
 //	It is time for some action
 	my_dabProcessor = new dabProcessor   (this,
@@ -293,6 +297,8 @@ QString h;
 	                                      threshold,
 	                                      diff_length,
 	                                      inputDevice -> bitDepth (),
+                                              tii_depth,
+	                                      echo_depth,
 	                                      responseBuffer,
 	                                      spectrumBuffer,
 	                                      iqBuffer,
@@ -541,11 +547,6 @@ void	RadioInterface::show_motHandling (bool b) {
 	}
 }
 	
-///	called from the ofdmDecoder, which computed this for each frame
-void	RadioInterface::show_snr (int s) {
-//	if (running. load ())
-//	   snrDisplay	-> display (s);
-}
 
 ///	just switch a color, obviously GUI dependent, but called
 //	from the ofdmprocessor
@@ -822,7 +823,8 @@ int32_t	tunedFrequency;
 	soundOut		-> stop ();
 	inputDevice		-> stopReader ();
 	clear_showElements ();
-
+	secondariesVector. resize (0);
+	
 	tunedFrequency		= theBand. Frequency (dabBand, s);
 	if (!inputDevice	-> restartReader (tunedFrequency)) {
 	   QMessageBox::warning (this, tr ("Warning"),
@@ -1046,10 +1048,18 @@ void	RadioInterface::showImpulse (int amount) {
 	if (running. load ())
 	   my_impulseViewer -> showImpulse (amount);
 }
-//
+
+void	RadioInterface::showIndex (int ind) {
+	if (!running. load ())
+	   return;
+	my_impulseViewer -> showIndex (ind);
+}
+
 void    RadioInterface::show_tii (int amount) {
-        if (running. load ())
-           my_tiiViewer -> showSpectrum (amount);
+        if (!running. load ())
+	   return;
+        my_tiiViewer -> showSpectrum (amount);
+	my_tiiViewer -> showSecondaries (secondariesVector);
 }
 
 void	RadioInterface::set_audioDump (void) {
@@ -1139,7 +1149,9 @@ void	RadioInterface::hideButtons	(void) {
 void	RadioInterface::setSyncLost	(void) {
 }
 
-void	RadioInterface::showCoordinates (int mainId, int subId) {
+void	RadioInterface::showCoordinates (int data) {
+int	mainId	= data >> 8;
+int	subId	= data & 0xFF;
 QString a = "Estimate: ";
 QString b = "  ";
 
@@ -1150,6 +1162,18 @@ QString b = "  ";
 	b	.append (QString::number (subId));
 	a. append (b);
 	techData. transmitter_coordinates -> setText (a);
+}
+
+void    RadioInterface::showSecondaries (int data) {
+int     i;
+
+        if (!running. load ())
+           return;
+
+        if (data == -1)
+           secondariesVector. resize (0);
+        else
+           secondariesVector. push_back (data);
 }
 
 void	RadioInterface::showEnsembleData (void) {

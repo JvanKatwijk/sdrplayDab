@@ -36,7 +36,7 @@
 #define	N	5
 
 static
-int	tii_delay	= 10;
+int	tii_delay	= 5;
 static
 int	tii_counter	= 0;
 
@@ -53,6 +53,8 @@ int16_t res     = 1;
 	                                 int16_t	threshold,
 	                                 int16_t	diff_length,
 	                                 int16_t	bitDepth,
+	                                 int16_t	tii_depth,
+	                                 int16_t	echo_depth,
 	                                 RingBuffer<float> *responseBuffer,
 	                                 RingBuffer<std::complex<float>> *
 	                                                   spectrumBuffer,
@@ -68,10 +70,11 @@ int16_t res     = 1;
 	                                                picturesPath),
 	                                 phaseSynchronizer (mr,
 	                                                    dabMode, 
-	                                                    responseBuffer,
                                                             threshold,
-	                                                    diff_length),
-	                                 my_TII_Detector (dabMode),
+	                                                    diff_length,
+	                                                    echo_depth,
+	                                                    responseBuffer),
+	                                 my_TII_Detector (dabMode, tii_depth),
 	                                 my_ofdmDecoder (mr,
 	                                                 dabMode,
 	                                                 iqBuffer,
@@ -115,8 +118,10 @@ int32_t	i;
         localBuffer. resize (bufferSize);
         localCounter            = 0;
 
-	connect (this, SIGNAL (showCoordinates (int, int)),
-                 mr,   SLOT   (showCoordinates (int, int)));
+	connect (this, SIGNAL (showCoordinates (int)),
+                 mr,   SLOT   (showCoordinates (int)));
+	connect (this, SIGNAL (showSecondaries (int)),
+	         mr,   SLOT   (showSecondaries (int)));
 	connect (this, SIGNAL (setSynced (char)),
 	         myRadioInterface, SLOT (setSynced (char)));
 	connect (this, SIGNAL (set_freqOffset (int)),
@@ -270,6 +275,7 @@ static	int dabCounter	= 0;
 	      ofdmBuffer [ofdmBufferIndex] = symbol;
 	      if (++ofdmBufferIndex < T_u)
 	         break;
+//	      phaseSynchronizer. computeAngle (ofdmBuffer);
 	      my_ofdmDecoder. processBlock_0 (ofdmBuffer);
 	      my_mscHandler.  processBlock_0 (ofdmBuffer. data ());
 //      Here we look only at the block_0 when we need a coarse
@@ -477,25 +483,20 @@ void	dabProcessor::handle_tii_detection
 	if (wasSecond (my_ficHandler. get_CIFcount (), &params)) {
 	   my_TII_Detector. addBuffer (ofdmBuffer);
 	   if (++tii_counter >= tii_delay) {
-	      int16_t mainId      = -1;
-	      int16_t subId       = -1;
-	      my_TII_Detector. processNULL (&mainId, &subId);
-	      if (mainId > 0)
-	         showCoordinates (mainId, subId);
-	      tiiBuffer -> putDataIntoBuffer (ofdmBuffer. data (), T_u);
+	      std::vector<int> secondaries;
+	      secondaries = my_TII_Detector. processNULL ();
+	      showSecondaries (-1);
+	      if (secondaries. size () > 0) {
+	         showCoordinates (secondaries. at (0));
+	         for (int i = 0; i < secondaries. size (); i ++)
+	            showSecondaries (secondaries. at (i));
+	      }
               show_tii (1);
 	      tii_counter	= 0;
 	      my_TII_Detector. reset ();
 	   }
-	}
-
-	if ((tii_counter & 02) != 0) {
 	   tiiBuffer -> putDataIntoBuffer (ofdmBuffer. data (), T_u);
-	   show_tii (1);
 	}
-
-	if (tii_counter >= tii_delay)
-	   tii_counter = 1;
 }
 
 void	dabProcessor:: dump (std::complex<float> temp) {

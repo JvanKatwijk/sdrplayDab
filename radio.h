@@ -89,6 +89,7 @@ private:
 	void		hideButtons		(void);
 	void		showButtons		(void);
 
+	std::vector<int> secondariesVector;
 	QString		dabMode;
 	uint8_t		dabBand;
 	uint8_t		isSynced;
@@ -154,7 +155,6 @@ public slots:
 	void		show_rsErrors		(int);
 	void		show_aacErrors		(int);
 	void		show_ficSuccess		(bool);
-	void		show_snr		(int);
 	void		setSynced		(char);
 	void		showLabel		(QString);
 	void		showMOT			(QByteArray, int, QString);
@@ -173,8 +173,10 @@ public slots:
 	void		No_Signal_Found		(void);
 	void		show_motHandling	(bool);
 	void		setSyncLost		(void);
-	void		showCoordinates		(int, int);
+	void		showCoordinates		(int);
+	void		showSecondaries		(int);
 	void		showImpulse		(int);
+	void		showIndex		(int);
 	void		showSpectrum		(int);
 	void		showIQ			(int);
 	void		showQuality		(float);

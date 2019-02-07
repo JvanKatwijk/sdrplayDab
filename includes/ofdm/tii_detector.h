@@ -26,20 +26,21 @@
 #include	<stdint.h>
 #include	"dab-params.h"
 #include	"fft-handler.h"
-#include	"phasetable.h"
 #include	<vector>
 
-class	TII_Detector : public phaseTable {
+class	TII_Detector {
 public:
-		TII_Detector	(uint8_t dabMode);
+		TII_Detector	(uint8_t dabMode, int16_t);
 		~TII_Detector	(void);
 	void	reset		(void);
 	void	addBuffer	(std::vector<std::complex<float>>);
-	void	processNULL	(int16_t *, int16_t *);
+	std::vector<int>
+	        processNULL	(void);
 
 private:
 	void			collapse	(std::complex<float> *,
 	                                         float *);
+	int16_t			depth;
 	uint8_t			invTable [256];
 	void			initInvTable	(void);
 	dabParams		params;

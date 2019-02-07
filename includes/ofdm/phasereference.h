@@ -38,12 +38,15 @@ Q_OBJECT
 public:
 			phaseReference 		(RadioInterface *,
 	                                         uint8_t,
-	                                         RingBuffer<float> *,
-	                                         int16_t, int16_t);
+	                                         int16_t,
+	                                         int16_t,
+	                                         int16_t,
+	                                         RingBuffer<float> *);
 			~phaseReference		(void);
 	int32_t		findIndex		(std::vector<std::complex<float>>);
 	int16_t		estimate_CarrierOffset	(std::vector<std::complex<float>>);
 	float		estimate_FrequencyOffset (std::vector<std::complex<float>>);
+	void		computeAngle		(std::vector<std::complex<float>>);
 //
 //	This one is used in the ofdm decoder
 	std::vector<std::complex<float>> refTable;
@@ -54,6 +57,7 @@ private:
 	std::vector<float> phaseDifferences;
 	int16_t		threshold;
 	int16_t		diff_length;
+	int16_t		depth;
 	int32_t		T_u;
 	int16_t		carriers;
 
@@ -63,6 +67,7 @@ private:
 	int32_t		displayCounter;
 signals:
 	void		showImpulse (int);
+	void		showIndex   (int);
 };
 #endif
 

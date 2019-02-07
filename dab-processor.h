@@ -70,6 +70,8 @@ public:
 	                         int16_t,
 	                         int16_t,
 	                         int16_t,
+	                         int16_t,
+	                         int16_t,
 	                         RingBuffer<float> *,
 	                         RingBuffer<std::complex <float>> *,
 	                         RingBuffer<std::complex <float>> *,
@@ -168,8 +170,8 @@ signals:
 	void		setSynced		(char);
 	void		No_Signal_Found		(void);
 	void		setSyncLost		(void);
-	void		showCoordinates		(int, int);
-//	void		showCoordinates		(float, float);
+	void		showCoordinates		(int);
+	void		showSecondaries		(int);
 	void		show_Spectrum		(int);
 	void		set_freqOffset		(int);
 	void		show_tii		(int);
