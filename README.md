@@ -24,8 +24,8 @@ b. the impulse window whows - if detectable - the relative delay - in micro seco
 Of course, all these computations cost a little additional CPU time,
 therefore they are optional
 
-a. if "tii_depth=xxx" is set (xxx being 3 or 4) the tii search is done
-b. if "echo_depth=xxx" is set (xxx being 3 or 4) the delays of the secondary
+a. if "tii_depth=xxx" is set (xxx being 3 or 4) the tii search is done for a maximum of xxx transmitters,
+b. if "echo_depth=xxx" is set (xxx being 3 or 4) the delays of maximal xxx secondary
 transmitters are computed.
 
 -----------------------------------------------------------------------------
