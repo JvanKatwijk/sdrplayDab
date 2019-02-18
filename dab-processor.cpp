@@ -112,11 +112,13 @@ int32_t	i;
         dumpScale			= valueFor (bitDepth);
 
 	ibits. resize (2 * carriers);
-//
+
 //	for the spectrum display we need:
 	bufferSize              = 32768;
         localBuffer. resize (bufferSize);
         localCounter            = 0;
+
+	phaseComputing		= false;
 
 	connect (this, SIGNAL (showCoordinates (int)),
                  mr,   SLOT   (showCoordinates (int)));
@@ -275,7 +277,8 @@ static	int dabCounter	= 0;
 	      ofdmBuffer [ofdmBufferIndex] = symbol;
 	      if (++ofdmBufferIndex < T_u)
 	         break;
-//	      phaseSynchronizer. computeAngle (ofdmBuffer);
+	      if (phaseComputing)
+	         phaseSynchronizer. computeAngle (ofdmBuffer);
 	      my_ofdmDecoder. processBlock_0 (ofdmBuffer);
 	      my_mscHandler.  processBlock_0 (ofdmBuffer. data ());
 //      Here we look only at the block_0 when we need a coarse
@@ -518,4 +521,7 @@ void	dabProcessor::stopDumping (void) {
         dumpfilePointer. store (nullptr);
 }
 
+void	dabProcessor::set_phaseComputing	(bool b) {
+	phaseComputing	= b;
+}
 

@@ -4,19 +4,19 @@
  *    Jan van Katwijk (J.vanKatwijk@gmail.com)
  *    Lazy Chair Computing
  *
- *    This file is part of the Qt-DAB program
- *    Qt-DAB is free software; you can redistribute it and/or modify
+ *    This file is part of the sdrplayDab program
+ *    sdrplayDab is free software; you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation; either version 2 of the License, or
  *    (at your option) any later version.
  *
- *    Qt-DAB is distributed in the hope that it will be useful,
+ *    sdrplayDab is distributed in the hope that it will be useful,
  *    but WITHOUT ANY WARRANTY; without even the implied warranty of
  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *    GNU General Public License for more details.
  *
  *    You should have received a copy of the GNU General Public License
- *    along with Qt-DAB; if not, write to the Free Software
+ *    along with sdrplayDab-DAB; if not, write to the Free Software
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 #include	"phasereference.h" 
@@ -49,6 +49,7 @@ float	Phi_k;
 	this	-> depth	= depth;
 	this	-> carriers	= params. get_carriers ();
 
+	prevTable.		resize (T_u);
 	refTable.		resize (T_u);
 	phaseDifferences.	resize (diff_length);
 	fft_buffer		= my_fftHandler. getVector ();
@@ -57,6 +58,7 @@ float	Phi_k;
 	displayCounter		= 0;
 
 	memset (refTable. data (), 0, sizeof (std::complex<float>) * T_u);
+	memset (prevTable. data (), 0, sizeof (std::complex<float>) * T_u);
 
 	for (i = 1; i <= params. get_carriers () / 2; i ++) {
 	   Phi_k =  get_Phi (i);
@@ -75,6 +77,8 @@ float	Phi_k;
 	         mr,   SLOT   (showImpulse (int)));
 	connect (this, SIGNAL (showIndex   (int)),
 	         mr,   SLOT   (showIndex   (int)));
+	connect (this, SIGNAL (showPhases  (float, float)),
+	         mr,   SLOT   (showPhases  (float, float)));
 }
 
 	phaseReference::~phaseReference (void) {
@@ -90,23 +94,35 @@ float	Phi_k;
   *	looking for.
   */
 
-static float prev_angle	= 0;
+static std::complex<float> oldsum	= std::complex<float> (0, 0);
+static bool xxxx			= false;
 
+static	float	angle_1			= 0;
+static	float	angle_2			= 0;
+static	float	theSum			= 0;
 void	phaseReference::computeAngle (std::vector<std::complex<float>> v) {
 std::complex<float> sum	= std::complex<float>(0, 0);
 int	i;
-float	angle;
+
 	memcpy (fft_buffer, v. data (), T_u * sizeof (std::complex<float>));
 	my_fftHandler. do_FFT ();
 //
-//      into the frequency domain, now correlate
-	for (i = 0; i < T_u; i ++)
-	   sum +=  fft_buffer [i] * conj (refTable [i]);
-
-	angle = arg (sum);
-	float res = arg (sum) - prev_angle;
-	fprintf (stderr, "angle %f\n", res < 0 ? res + 2 * M_PI : res);
-	prev_angle	= angle;
+	for (i = -carriers / 2; i < carriers / 2; i ++) {
+	   if (i != 0)
+	      sum +=  fft_buffer [(T_u + i) % T_u] *
+	                                 conj (prevTable [(T_u + i) % T_u]);
+	}
+	memcpy (prevTable. data (),
+	                 fft_buffer, T_u * sizeof (std::complex<float>));
+	if (xxxx) {
+	   float a = arg (sum) + M_PI;
+	   float b = arg (oldsum) + M_PI;
+	   angle_1	= 0.95 * angle_1 + 0.05 * a;
+	   angle_2	= 0.95 * angle_2 + 0.05 * b;	
+	   showPhases (angle_1, angle_2);
+	}
+	oldsum = sum;
+	xxxx = !xxxx;
 }
 
 int32_t	phaseReference::findIndex (std::vector <std::complex<float>> v) {

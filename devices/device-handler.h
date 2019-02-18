@@ -41,6 +41,7 @@ virtual		void	setEnv		(dabProcessor *);
 virtual		void	show		(void) {}
 virtual		void	hide		(void) {}
 virtual		bool	isVisible	(void) {return true;}
+virtual		bool	isSDRPLAY_2	(void) {return false;}
 protected:
 	dabProcessor	*base;
 };

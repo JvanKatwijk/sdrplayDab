@@ -9,11 +9,6 @@ TARGET		= sdrplay-dab-1.1
 QT		+= widgets 
 CONFIG		-= console
 QMAKE_CXXFLAGS	+= -std=c++11
-QMAKE_CFLAGS	+=  -O3 -ffast-math
-QMAKE_CXXFLAGS	+=  -O3 -ffast-math
-#QMAKE_CFLAGS	+=  -pg
-#QMAKE_CXXFLAGS	+=  -pg
-#QMAKE_LFLAGS	+=  -pg
 QMAKE_CXXFLAGS += -isystem $$[QT_INSTALL_HEADERS]
 RC_ICONS	=  sdrplay-dab.ico
 RESOURCES	+= resources.qrc
@@ -238,10 +233,16 @@ isEmpty(GITHASHSTRING) {
     DEFINES += GITHASH=\\\"------\\\"
 }
 
+QMAKE_CFLAGS	+=  -lto -ffast-math
+QMAKE_CXXFLAGS	+=  -lto -ffast-math
+#QMAKE_CFLAGS	+=  -pg
+#QMAKE_CXXFLAGS	+=  -pg
+#QMAKE_LFLAGS	+=  -pg
 INCLUDEPATH	+= /usr/local/include
 INCLUDEPATH	+= /usr/local/include /usr/include/qt4/qwt /usr/include/qt5/qwt /usr/include/qt4/qwt /usr/include/qwt /usr/local/qwt-6.1.4-svn/
 LIBS		+= -lfftw3f  -lusb-1.0 -ldl  #
 LIBS		+= -lportaudio
+LIBS		+= -lmirsdrapi-rsp
 LIBS		+= -lz
 LIBS		+= -lsndfile
 LIBS		+= -lsamplerate
@@ -267,14 +268,7 @@ DEFINES		+= MSC_DATA__		# use at your own risk
 DEFINES		+= PRESET_NAME
 DEFINES		+= __THREADED_BACKEND
 #DEFINES	+= SHOW_MISSED
-
-# you might select SSE if you are compiling on a x64 with SSE support
-# and you might select NEON if you are compiling for an arm (however
-# have a look at the config section for neon then)
-#CONFIG	+= NEON_RPI2
-#CONFIG	+= NEON_RPI3
-#CONFIG	+= SSE
-#CONFIG	+= NO_SSE
+DEFINES		+=  __SHOW_PHASEDIFFERENCE__
 }
 #
 # an attempt to have it run under W32 through cross compilation
@@ -290,6 +284,8 @@ exists ("./.git") {
    }
 }
 
+QMAKE_CFLAGS	+=  -O3 -ffast-math
+QMAKE_CXXFLAGS	+=  -O3 -ffast-math
 isEmpty(GITHASHSTRING) {
     DEFINES += GITHASH=\\\"------\\\"
 }

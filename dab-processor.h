@@ -88,6 +88,9 @@ public:
 	void		update_data		(int *, float *, float *);
 	float		initialSignal		(void);
 //
+//	for special occasions
+	void		set_phaseComputing	(bool);
+
 //	inheriting from our delegates
 	void		set_tiiCoordinates	(void);
 	void		setSelectedService      (QString &);
@@ -113,6 +116,7 @@ public:
 	void		stopDumping		(void);
 	void		startDumping		(SNDFILE *f);
 private:
+	bool		phaseComputing;
 	void		dump			(std::complex<float>);
 	int16_t         dumpIndex;
 	int16_t         dumpScale;

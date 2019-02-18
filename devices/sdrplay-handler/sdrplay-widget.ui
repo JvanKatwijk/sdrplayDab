@@ -239,7 +239,7 @@
    <widget class="QCheckBox" name="debugControl">
     <property name="geometry">
      <rect>
-      <x>320</x>
+      <x>380</x>
       <y>190</y>
       <width>88</width>
       <height>21</height>

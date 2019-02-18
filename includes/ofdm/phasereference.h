@@ -51,6 +51,7 @@ public:
 //	This one is used in the ofdm decoder
 	std::vector<std::complex<float>> refTable;
 private:
+	std::vector<std::complex<float>> prevTable;
 	dabParams	params;
 	fftHandler	my_fftHandler;
 	RingBuffer<float> *response;
@@ -66,8 +67,9 @@ private:
 	int32_t		framesperSecond;	
 	int32_t		displayCounter;
 signals:
-	void		showImpulse (int);
-	void		showIndex   (int);
+	void		showImpulse	(int);
+	void		showIndex	(int);
+	void		showPhases	(float, float);
 };
 #endif
 

@@ -256,9 +256,20 @@ QString h;
            channelSelector -> setCurrentIndex (k);
         }
 
+	antennaSwitch		-> hide ();
+	phaseOffsetDisplay	-> hide ();
+	antennaSwitch_mode	= false;
 	inputDevice	= nullptr;
 	try {
 	   inputDevice	= new sdrplayHandler (this, dabSettings);
+#ifdef	__SHOW_PHASEDIFFERENCE__
+	   if (inputDevice -> isSDRPLAY_2 ()) {
+	      connect (antennaSwitch, SIGNAL (clicked (void)),
+	               this, SLOT (antennaSwitcher (void)));
+	      antennaSwitch -> show ();
+	   }
+	   
+#endif
  	}
 	catch (int e) {
 	   fprintf (stderr, "no sdrplay device, trying to open a file\n");
@@ -1423,6 +1434,28 @@ void	RadioInterface::show_techData (QString		ensembleLabel,
 	               get_programm_type_string (d -> programType));
 }
 
+void	RadioInterface::antennaSwitcher (void) {
+	if (!inputDevice -> isSDRPLAY_2 ())
+	   return;
+	if (antennaSwitch_mode) {
+	   phaseOffsetDisplay	-> hide ();
+	   ((sdrplayHandler *)inputDevice)	-> antennaSwitcher (false);
+	   my_dabProcessor	-> set_phaseComputing (false);
+	   antennaSwitch	-> setText ("off");
+	}
+	else {
+	   phaseOffsetDisplay	-> show ();
+	   ((sdrplayHandler *)inputDevice)	-> antennaSwitcher (true);
+	   my_dabProcessor	-> set_phaseComputing (true);
+	   antennaSwitch	-> setText ("on");
+	}
+	antennaSwitch_mode	= !antennaSwitch_mode;
+}
+
+void	RadioInterface::showPhases	(float left, float right) {
+	phaseOffsetDisplay	-> display (0.5 - left / (left + right));
+}
+	   
 #include <QCloseEvent>
 void RadioInterface::closeEvent (QCloseEvent *event) {
 
