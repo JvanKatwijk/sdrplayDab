@@ -388,36 +388,28 @@ void	dabProcessor::coarseCorrectorOff (void) {
 	correctionNeeded	= false;
 }
 
-uint8_t dabProcessor::kindofService           (QString &s) {
-	return my_ficHandler. kindofService (s);
+//	just a convenience function
+bool	dabProcessor::is_audioService	(QString &s) {
+audiodata ad;
+	my_ficHandler. dataforAudioService (s, &ad, 0);
+	return ad. defined;
 }
 
-void	dabProcessor::dataforAudioService     (int16_t c, audiodata *dd) {
-	my_ficHandler. dataforAudioService (c, dd);
+bool	dabProcessor::is_packetService	(QString &s) {
+packetdata pd;
+	my_ficHandler. dataforPacketService (s, &pd, 0);
+	return pd. defined;
 }
 
-void	dabProcessor::dataforAudioService     (QString &s,audiodata *dd) {
-	my_ficHandler. dataforAudioService (s, dd, 0);
-}
-
-void	dabProcessor::dataforAudioService     (QString &s,
+void	dabProcessor::dataforAudioService	(QString &s,
 	                                          audiodata *d, int16_t c) {
 	my_ficHandler. dataforAudioService (s, d, c);
 }
 
-void	dabProcessor::dataforDataService	(int16_t c, packetdata *dd) {
-	my_ficHandler. dataforDataService (c, dd);
+void	dabProcessor::dataforPacketService	(QString &s,
+	                                         packetdata *d, int16_t c) {
+	my_ficHandler. dataforPacketService (s, d, c);
 }
-
-void	dabProcessor::dataforDataService	(QString &s, packetdata *dd) {
-	my_ficHandler. dataforDataService (s, dd, 0);
-}
-
-void	dabProcessor::dataforDataService	(QString &s,
-	                                            packetdata *d, int16_t c) {
-	my_ficHandler. dataforDataService (s, d, c);
-}
-
 
 void	dabProcessor::reset_msc (void) {
 	my_mscHandler. reset ();

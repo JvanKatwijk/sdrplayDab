@@ -163,6 +163,7 @@ public:
 	int16_t	language;
 	int16_t	programType;
 	int16_t	compnr;
+	int32_t	fmFrequency;
 	audiodata (void) {
 	   type	= AUDIO_SERVICE;
 	}

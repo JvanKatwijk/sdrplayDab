@@ -385,7 +385,7 @@
    <property name="geometry">
     <rect>
      <x>180</x>
-     <y>490</y>
+     <y>480</y>
      <width>41</width>
      <height>20</height>
     </rect>
@@ -404,7 +404,7 @@
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>490</y>
+     <y>480</y>
      <width>151</width>
      <height>20</height>
     </rect>
@@ -417,7 +417,7 @@
    <property name="geometry">
     <rect>
      <x>20</x>
-     <y>520</y>
+     <y>500</y>
      <width>201</width>
      <height>31</height>
     </rect>
@@ -501,6 +501,32 @@
    </property>
    <property name="segmentStyle">
     <enum>QLCDNumber::Flat</enum>
+   </property>
+  </widget>
+  <widget class="QLabel" name="fmLabel">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>530</y>
+     <width>81</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>also on FM</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="fmFrequency">
+   <property name="geometry">
+    <rect>
+     <x>120</x>
+     <y>530</y>
+     <width>81</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>TextLabel</string>
    </property>
   </widget>
  </widget>

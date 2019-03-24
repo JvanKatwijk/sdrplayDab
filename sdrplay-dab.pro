@@ -63,7 +63,6 @@ INCLUDEPATH += . \
 	      ./includes/output \
 	      ./includes/support \
 	      ./includes/support/viterbi-jan \
-#	      ./includes/support/viterbi-handler \
 	      ./includes/scopes-qwt6 \
               ./spectrum-viewer \
 	      ./impulse-viewer \
@@ -88,7 +87,7 @@ HEADERS += ./radio.h \
 	   ./includes/ofdm/tii_table.h \
 	   ./includes/ofdm/tii_detector.h \
 	   ./includes/ofdm/fic-handler.h \
-	   ./includes/ofdm/fib-processor.h  \
+	   ./includes/ofdm/fib-decoder.h  \
 	   ./includes/protection/protection.h \
 	   ./includes/protection/protTables.h \
 	   ./includes/protection/eep-protection.h \
@@ -127,7 +126,6 @@ HEADERS += ./radio.h \
 	   ./includes/output/newconverter.h \
 	   ./includes/output/audiosink.h \
 	   ./includes/support/viterbi-jan/viterbi-handler.h \
-#	   ./includes/support/viterbi-handler/viterbi-handler.h \
            ./includes/support/fft-handler.h \
 	   ./includes/support/ringbuffer.h \
 	   ./includes/support/Xtan2.h \
@@ -168,7 +166,7 @@ SOURCES += ./main.cpp \
 	   ./src/ofdm/tii_table.cpp \
 	   ./src/ofdm/tii_detector.cpp \
 	   ./src/ofdm/fic-handler.cpp \
-	   ./src/ofdm/fib-processor.cpp  \
+	   ./src/ofdm/fib-decoder.cpp  \
 	   ./src/protection/protection.cpp \
 	   ./src/protection/protTables.cpp \
 	   ./src/protection/eep-protection.cpp \
@@ -206,7 +204,6 @@ SOURCES += ./main.cpp \
 	   ./src/output/newconverter.cpp \
 	   ./src/output/audiosink.cpp \
 	   ./src/support/viterbi-jan/viterbi-handler.cpp \
-#	   ./src/support/viterbi-handler/viterbi-handler.cpp \
            ./src/support/fft-handler.cpp \
 	   ./src/support/Xtan2.cpp \
 	   ./src/support/dab-params.cpp \
@@ -268,7 +265,7 @@ DEFINES		+= MSC_DATA__		# use at your own risk
 DEFINES		+= PRESET_NAME
 DEFINES		+= __THREADED_BACKEND
 #DEFINES	+= SHOW_MISSED
-DEFINES		+=  __SHOW_PHASEDIFFERENCE__
+#DEFINES	+=  __SHOW_PHASEDIFFERENCE__
 }
 #
 # an attempt to have it run under W32 through cross compilation
@@ -311,9 +308,6 @@ LIBS		+= -lz
 #correct this for the correct path to the qwt6 library on your system
 #LIBS		+= -lqwt
 LIBS		+= -lqwt-qt5
-
-#READ THE README_VITERBI BEFORE CHANGING THIS
-#CONFIG		+= NO_SSE
 
 #very experimental, simple server for connecting to a tdc handler
 #CONFIG		+= datastreamer
@@ -384,8 +378,8 @@ NEON_RPI2	{
 # for RPI3 use (for me, it often fails though_
 NEON_RPI3	{
 	DEFINES		+= NEON_AVAILABLE
-#	QMAKE_CFLAGS	+=  -mcpu=cortex-a53 -mfloat-abi=hard -mfpu=neon-fp-armv8 -mneon-for-64bits
-#	QMAKE_CXXFLAGS	+=  -mcpu=cortex-a53 -mfloat-abi=hard -mfpu=neon-fp-armv8 -mneon-for-64bits
+	QMAKE_CFLAGS	+=  -mcpu=cortex-a53 -mfloat-abi=hard -mfpu=neon-fp-armv8 -mneon-for-64bits
+	QMAKE_CXXFLAGS	+=  -mcpu=cortex-a53 -mfloat-abi=hard -mfpu=neon-fp-armv8 -mneon-for-64bits
 	HEADERS		+= ./src/support/viterbi-handler/spiral-neon.h
 	SOURCES		+= ./src/support/viterbi-handler/spiral-neon.c
 }
