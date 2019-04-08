@@ -185,6 +185,7 @@ public slots:
 	void		antennaSwitcher		(void);
 	void		showPhases		(float, float);
 	void		closeEvent		(QCloseEvent *event);
+	void		showTime		(const QString &);
 //	Somehow, these must be connected to the GUI
 private slots:
 	void		set_nextChannel		(void);

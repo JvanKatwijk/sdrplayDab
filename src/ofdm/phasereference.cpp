@@ -51,7 +51,6 @@ float	Phi_k;
 
 	prevTable.		resize (T_u);
 	refTable.		resize (T_u);
-	phaseDifferences.	resize (diff_length);
 	fft_buffer		= my_fftHandler. getVector ();
 
 	framesperSecond		= 2048000 / params. get_T_F ();
@@ -67,12 +66,6 @@ float	Phi_k;
 	   refTable [T_u - i] = std::complex<float> (cos (Phi_k), sin (Phi_k));
 	}
 //
-//	prepare a table for the coarse frequency synchronization
-//	can be a static one, actually, we are only interested in
-//	the ones with a null
-	for (i = 1; i <= diff_length; i ++) 
-	   phaseDifferences [i - 1] = abs (arg (refTable [(T_u + i) % T_u] *
-	                         conj (refTable [(T_u + i + 1) % T_u])));
 	connect (this, SIGNAL (showImpulse (int)),
 	         mr,   SLOT   (showImpulse (int)));
 	connect (this, SIGNAL (showIndex   (int)),
@@ -195,51 +188,26 @@ std::vector<int> resultVector;
 	return resultVector. at (0);
 }
 
-//	We investigate a sequence of phasedifferences that
-//	are known starting at real carrier 0.
-//	Phase of the carriers of the "real" block 0 may be
-//	quite different than the phase of the carriers of the "reference"
-//	block, plain correlation (i.e. sum (x, y, i) does not work well.
-//	What is a good measure though is looking at the phase differences
-//	between successive carriers in both the "real" block and the
-//	reference block. These should be more or less the same.
-//	So we just compute the phasedifference between phasedifferences
-//	as measured and as they should be.
-//	To keep things simple, we just look at the locations where
-//	the phasedifference with the successor should be 0
-//	In previous versions we looked
-//	at the "weight" of the positive and negative carriers in the
-//	fft, but that did not work too well.
 #define	SEARCH_RANGE	(2 * 35)
 int16_t	phaseReference::estimate_CarrierOffset (std::vector<std::complex<float>> v) {
-int16_t	i, j, index = 100;
-float	diff;
-float	computedDiffs [SEARCH_RANGE + diff_length + 1];
-int	index_1	= 0;
-
-	memcpy (fft_buffer, v. data (), T_u * sizeof (std::complex<float>));
-	my_fftHandler. do_FFT ();
+int16_t	i, j;
+std::complex<float> temp;
+float	maxCorr	= 0;
+int	maxIndex = -1;
 
 	for (i = T_u - SEARCH_RANGE / 2;
-	     i < T_u + SEARCH_RANGE / 2 + diff_length; i ++) 
-	   computedDiffs [i - (T_u - SEARCH_RANGE / 2)] =
-	      abs (arg (fft_buffer [i % T_u] * conj (fft_buffer [(i + 1) % T_u])));
-
-	float	Mmin = 1000;
-	for (i = T_u - SEARCH_RANGE /2;
 	     i < T_u + SEARCH_RANGE / 2; i ++) {
-	   float sum = 0;
-
-	   for (j = 1; j < diff_length; j ++)
-	      if (phaseDifferences [j - 1] < 0.1)
-	         sum += computedDiffs [i - (T_u - SEARCH_RANGE / 2) + j];
-	   if (sum < Mmin) {
-	      Mmin = sum;
-	      index = i;
+	   temp = std::complex<float> (0, 0);
+	   for (j = 0; j < diff_length; j ++)
+	      temp += fft_buffer [(i + j) % T_u] *
+	                          refTable [(i + j) % T_u];
+	   if (abs (temp) > maxCorr) {
+	      maxIndex = i - (T_u - SEARCH_RANGE);
+	      maxCorr  = abs (temp);
 	   }
 	}
-	
-	return index - T_u; 
+
+	return maxIndex - T_u;
 }
 //
 //	NOT USED, just for some tests

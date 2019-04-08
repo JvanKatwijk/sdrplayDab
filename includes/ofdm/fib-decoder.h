@@ -141,6 +141,7 @@ private:
 signals:
 	void		addtoEnsemble	(const QString &);
 	void		nameofEnsemble  (int, const QString &);
+	void		setTime		(const QString &);
 	void		changeinConfiguration (void);
 };
 

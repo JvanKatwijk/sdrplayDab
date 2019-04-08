@@ -55,7 +55,6 @@ private:
 	dabParams	params;
 	fftHandler	my_fftHandler;
 	RingBuffer<float> *response;
-	std::vector<float> phaseDifferences;
 	int16_t		threshold;
 	int16_t		diff_length;
 	int16_t		depth;

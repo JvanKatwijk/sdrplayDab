@@ -1506,3 +1506,8 @@ bool	RadioInterface::eventFilter (QObject *obj, QEvent *event) {
 	}
 	return QMainWindow::eventFilter (obj, event);
 }
+
+void    RadioInterface::showTime        (const QString &s) {
+        localTimeDisplay        -> setText (s);
+}
+

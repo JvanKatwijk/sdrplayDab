@@ -308,6 +308,7 @@ LIBS		+= -lz
 #correct this for the correct path to the qwt6 library on your system
 #LIBS		+= -lqwt
 LIBS		+= -lqwt-qt5
+LIBS		+= -lmir_sdr_api
 
 #very experimental, simple server for connecting to a tdc handler
 #CONFIG		+= datastreamer
