@@ -277,8 +277,7 @@ static	int dabCounter	= 0;
 	      ofdmBuffer [ofdmBufferIndex] = symbol;
 	      if (++ofdmBufferIndex < T_u)
 	         break;
-	      if (phaseComputing)
-	         phaseSynchronizer. computeAngle (ofdmBuffer);
+
 	      my_ofdmDecoder. processBlock_0 (ofdmBuffer);
 	      my_mscHandler.  processBlock_0 (ofdmBuffer. data ());
 //      Here we look only at the block_0 when we need a coarse

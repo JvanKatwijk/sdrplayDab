@@ -265,7 +265,6 @@ DEFINES		+= MSC_DATA__		# use at your own risk
 DEFINES		+= PRESET_NAME
 DEFINES		+= __THREADED_BACKEND
 #DEFINES	+= SHOW_MISSED
-#DEFINES	+=  __SHOW_PHASEDIFFERENCE__
 }
 #
 # an attempt to have it run under W32 through cross compilation

@@ -46,15 +46,14 @@ public:
 	int32_t		findIndex		(std::vector<std::complex<float>>);
 	int16_t		estimate_CarrierOffset	(std::vector<std::complex<float>>);
 	float		estimate_FrequencyOffset (std::vector<std::complex<float>>);
-	void		computeAngle		(std::vector<std::complex<float>>);
 //
 //	This one is used in the ofdm decoder
 	std::vector<std::complex<float>> refTable;
 private:
-	std::vector<std::complex<float>> prevTable;
 	dabParams	params;
 	fftHandler	my_fftHandler;
 	RingBuffer<float> *response;
+	std::vector<float> phaseDifferences;
 	int16_t		threshold;
 	int16_t		diff_length;
 	int16_t		depth;

@@ -262,14 +262,6 @@ QString h;
 	inputDevice	= nullptr;
 	try {
 	   inputDevice	= new sdrplayHandler (this, dabSettings);
-#ifdef	__SHOW_PHASEDIFFERENCE__
-	   if (inputDevice -> isSDRPLAY_2 ()) {
-	      connect (antennaSwitch, SIGNAL (clicked (void)),
-	               this, SLOT (antennaSwitcher (void)));
-	      antennaSwitch -> show ();
-	   }
-	   
-#endif
  	}
 	catch (int e) {
 	   fprintf (stderr, "no sdrplay device, trying to open a file\n");
@@ -286,6 +278,7 @@ QString h;
 
 	      file	= QDir::toNativeSeparators (file);
 	      inputDevice	= new wavFiles (file);
+	      inputDevice	-> show ();
 	      hideButtons ();
 	   }
 	   catch (int e) {
