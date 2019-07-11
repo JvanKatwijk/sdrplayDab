@@ -330,6 +330,7 @@ mir_sdr_ErrT	err;
 	            gainCorr = -20;
 	         if (gainCorr > 20)
 	            gainCorr = 20;
+
 	         int GRdB	= gains. curr - get_lnaGRdB (p -> hwVersion,
 	                                                     p -> lnaState);
 	         if (GRdB + gainCorr < 20)
@@ -339,6 +340,7 @@ mir_sdr_ErrT	err;
 	            GRdB = 59;
 	         else
 	            GRdB = GRdB + gainCorr;
+
 	         if (GRdB != 0) 
 	            err = mir_sdr_RSP_SetGr (GRdB, p -> lnaState, 1 , 0);
 	         if (err != mir_sdr_Success)

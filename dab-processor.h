@@ -55,6 +55,7 @@ class	QSettings;
 #define	END_OF_FRAME	0010
 #define	PREPARE_FOR_SKIP_NULL_PERIOD	0011
 #define	SKIP_NULL_PERIOD		0012
+#define	CHECK_END_DIP	0013
 
 //
 //	return values for addSymbol
@@ -159,6 +160,7 @@ private:
 	float		avgLocalValue;
 	int		counter;
 	float		dipValue;
+	float		dipValue_s;
 	int		dipCnt;
 
 	std::complex<float>		FreqCorr;

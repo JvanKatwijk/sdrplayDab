@@ -5,7 +5,7 @@
 ######################################################################
 
 TEMPLATE	= app
-TARGET		= sdrplay-dab-1.1
+TARGET		= sdrplay-dab-2.1
 QT		+= widgets 
 CONFIG		-= console
 QMAKE_CXXFLAGS	+= -std=c++11
@@ -248,6 +248,9 @@ LIBS		+= -lfaad
 #LIBS		+= -lqwt
 LIBS		+= -lqwt-qt5
 
+#experimental, a second device
+CONFIG		+= lime
+
 #very experimental, simple server for connecting to a tdc handler
 #CONFIG		+= datastreamer
 
@@ -259,7 +262,6 @@ LIBS		+= -lqwt-qt5
 #otherwise, if you want to use the default qt way of soud out
 #CONFIG		+= qt-audio
 #comment both out if you just want to use the "normal" way
-
 CONFIG		+= try-epg		# do not use
 DEFINES		+= MSC_DATA__		# use at your own risk
 DEFINES		+= PRESET_NAME
@@ -308,6 +310,9 @@ LIBS		+= -lz
 #LIBS		+= -lqwt
 LIBS		+= -lqwt-qt5
 LIBS		+= -lmir_sdr_api
+
+#experimental, a second device
+CONFIG		+= lime
 
 #very experimental, simple server for connecting to a tdc handler
 #CONFIG		+= datastreamer
@@ -363,6 +368,17 @@ datastreamer	{
 	INCLUDEPATH	+= ./server-thread
 	HEADERS		+= ./server-thread/tcp-server.h
 	SOURCES		+= ./server-thread/tcp-server.cpp
+}
+
+lime  {
+        DEFINES         += HAVE_LIMESDR
+        INCLUDEPATH     += ./devices/lime-handler
+	DEPENDPATH	+= ./devices/lime-handler
+	HEADERS		+= ./devices/lime-handler/LMS7002M_parameters.h \
+			   ./devices/lime-handler/LimeSuite.h \
+        		   ./devices/lime-handler/lime-handler.h
+        SOURCES         += ./devices/lime-handler/lime-handler.cpp
+        FORMS           += ./devices/lime-handler/lime-widget.ui
 }
 
 

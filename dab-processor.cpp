@@ -178,6 +178,7 @@ static	int dabCounter	= 0;
 	      avgLocalValue	= 0;
 	      counter		= 0;
 	      dipValue		= 0;
+	      dipValue_s	= 0;
 	      dipCnt		= 0;
 	      fineOffset	= 0;
 	      correctionNeeded	= true;
@@ -194,6 +195,7 @@ static	int dabCounter	= 0;
 	         processorMode	= LOOKING_FOR_DIP;
 	         retValue	= INITIAL_STRENGTH;	
 	         counter	= 0;
+	         
 	      }
 	      break;
 //
@@ -241,8 +243,22 @@ static	int dabCounter	= 0;
 	         }
 	         else {
 	            counter		= 0;
-	            processorMode       = INIT;
+	            processorMode       = LOOKING_FOR_DIP;
 	         }
+	      }
+	      break;
+
+	   case CHECK_END_DIP:
+	      ofdmBuffer [ofdmBufferIndex ++] = symbol;
+	      if (ofdmBufferIndex >= 100) {
+	         float avgValue_testPeriod = 0;
+	         for (int i = 0; i < 100; i ++)
+	            avgValue_testPeriod += abs (ofdmBuffer [i]);
+	         avgValue_testPeriod /= 100;
+	         if (avgValue_testPeriod < 2 * dipValue)
+	            processorMode	= LOOKING_FOR_DIP;
+	         else
+	            processorMode	= END_OF_DIP;
 	      }
 	      break;
 
@@ -254,6 +270,7 @@ static	int dabCounter	= 0;
 	            if (attempts > 5) {
 	               emit No_Signal_Found ();
                        processorMode       = START;
+//	               fprintf (stderr, "%d\n", startIndex);
 	               break;
                     }
 	            else {
@@ -263,7 +280,7 @@ static	int dabCounter	= 0;
 	         }
 	         attempts	= 0;	// we made it!!!
 	         dabCounter	= dabCounter - T_u + startIndex;
-//	         fprintf (stderr, "%d \n", dabCounter);
+//	         fprintf (stderr, "%d %d \n", dabCounter, startIndex);
 	         dabCounter	= T_u - startIndex;
 	         memmove (ofdmBuffer. data (),
 	                  &((ofdmBuffer. data ()) [startIndex]),
@@ -274,8 +291,8 @@ static	int dabCounter	= 0;
 	      break;
 
 	   case GO_FOR_BLOCK_0:
-	      ofdmBuffer [ofdmBufferIndex] = symbol;
-	      if (++ofdmBufferIndex < T_u)
+	      ofdmBuffer [ofdmBufferIndex ++] = symbol;
+	      if (ofdmBufferIndex < T_u)
 	         break;
 
 	      my_ofdmDecoder. processBlock_0 (ofdmBuffer);
@@ -326,7 +343,7 @@ static	int dabCounter	= 0;
 	      break;
 
 	   case END_OF_FRAME:
-	      fineOffset = arg (FreqCorr) / M_PI * carrierDiff / 2;
+	      fineOffset += arg (FreqCorr) / M_PI * carrierDiff / 20;
 
 	      if (fineOffset > carrierDiff / 2) {
 	         coarseOffset += carrierDiff;
@@ -357,9 +374,11 @@ static	int dabCounter	= 0;
 	      dipValue		+= jan_abs (symbol);
 	      nullCount ++;
 	      if (nullCount >= T_null - 1) {
-	         processorMode = END_OF_DIP;
+	         processorMode = CHECK_END_DIP;
 	         dipValue	/= T_null;
+	         dipValue_s	= dipValue;
 	         handle_tii_detection (ofdmBuffer);
+	         ofdmBufferIndex	= 0;
 	      }
 	      break;
 	}
@@ -449,7 +468,7 @@ int	result	= coarseOffset + fineOffset;
 	   set_freqOffset (result);
 	}
 	*freq		= result;
-	*dip		= dipValue;
+	*dip		= dipValue_s;
 	*firstSymb	= avgSignalValue;
 }
 

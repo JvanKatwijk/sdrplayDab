@@ -46,6 +46,7 @@ float	Phi_k;
 	this	-> threshold	= threshold;
 	this	-> diff_length	= diff_length;
 	this	-> T_u		= params. get_T_u ();
+	this	-> T_g		= params. get_T_g ();
 	this	-> depth	= depth;
 	this	-> carriers	= params. get_carriers ();
 
@@ -115,18 +116,23 @@ std::vector<int> resultVector;
 /**
   *	We compute the average and the max signal values
   */
-	for (i = 0; i < T_u; i ++) {
+	for (i = 0; i < T_u / 2; i ++) {
 	   lbuf [i] = jan_abs (fft_buffer [i]);
 	   mbuf [i] = lbuf [i];
-	   sum	+= lbuf [i];
-	   if (lbuf [i] > Max) {
-	      maxIndex = i;
-	      Max = lbuf [i];
+	   sum += jan_abs (fft_buffer [i]);
+	}
+
+	sum /= T_u / 2;
+
+	for (i = 0; i < 50; i ++) {
+	   if (lbuf [T_g - 40 + i] > Max) {
+	      maxIndex = T_g - 40 + i;
+	      Max = lbuf [T_g - 40 + i];
 	   }
 	}
 
-	if (Max < threshold * sum / T_u)
-	   return (- abs (Max * T_u / sum) - 1);
+	if (Max < threshold * sum)
+	   return (- abs (Max / sum) - 1);
 	else
 	   resultVector. push_back (maxIndex);
 
@@ -150,8 +156,8 @@ std::vector<int> resultVector;
 
 	if (response != NULL) {
 	   if (++displayCounter > framesperSecond / 4) {
-	      response  -> putDataIntoBuffer (mbuf, T_u);
-	      showImpulse (T_u);
+	      response  -> putDataIntoBuffer (mbuf, T_u / 2);
+	      showImpulse (T_u / 2);
 	      displayCounter    = 0;
 	      if (resultVector. at (0) > 0) {
 	         showIndex (-1);

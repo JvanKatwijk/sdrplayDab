@@ -42,6 +42,9 @@
 #include        "data-descriptor.h"
 #include	"device-handler.h"
 #include	"sdrplay-handler.h"
+#ifdef	HAVE_LIMESDR
+#include	"lime-handler.h"
+#endif
 #include	"wavfiles.h"
 #ifdef	TCP_STREAMER
 #include	"tcp-streamer.h"
@@ -260,12 +263,20 @@ QString h;
 	phaseOffsetDisplay	-> hide ();
 	antennaSwitch_mode	= false;
 	inputDevice	= nullptr;
+#ifdef	HAVE_LIMESDR
 	try {
-	   inputDevice	= new sdrplayHandler (this, dabSettings);
- 	}
-	catch (int e) {
-	   fprintf (stderr, "no sdrplay device, trying to open a file\n");
+	   inputDevice = new limeHandler (this, dabSettings);
+	} catch (int e) {
+	   fprintf (stderr, "no limeSDR device, trying to open sdrplay\n");
 	}
+#endif
+	if (inputDevice == nullptr) 
+	   try {
+	      inputDevice	= new sdrplayHandler (this, dabSettings);
+ 	   }
+	   catch (int e) {
+	      fprintf (stderr, "no SDRplay, trying to open a file\n");
+	   }
 
 	if (inputDevice	== nullptr) {
 	   try {
