@@ -42,9 +42,6 @@
 #include        "data-descriptor.h"
 #include	"device-handler.h"
 #include	"sdrplay-handler.h"
-#ifdef	HAVE_LIMESDR
-#include	"lime-handler.h"
-#endif
 #include	"wavfiles.h"
 #ifdef	TCP_STREAMER
 #include	"tcp-streamer.h"
@@ -191,11 +188,7 @@ QString h;
 //	restore some settings from previous incarnations
 	QString t       =
                 dabSettings     -> value ("dabBand", "VHF Band III"). toString ();
-        k       = bandSelector -> findText (t);
-        if (k != -1)
-           bandSelector -> setCurrentIndex (k);
-        dabBand         = bandSelector -> currentText () == "VHF Band III" ?
-                                             BAND_III : L_BAND;
+        dabBand         = t == "VHF Band III" ?  BAND_III : L_BAND;
 
         theBand. setupChannels  (channelSelector, dabBand);
 
@@ -259,24 +252,13 @@ QString h;
            channelSelector -> setCurrentIndex (k);
         }
 
-	antennaSwitch		-> hide ();
-	phaseOffsetDisplay	-> hide ();
-	antennaSwitch_mode	= false;
 	inputDevice	= nullptr;
-#ifdef	HAVE_LIMESDR
 	try {
-	   inputDevice = new limeHandler (this, dabSettings);
-	} catch (int e) {
-	   fprintf (stderr, "no limeSDR device, trying to open sdrplay\n");
+	   inputDevice	= new sdrplayHandler (this, dabSettings);
+ 	}
+	catch (int e) {
+	   fprintf (stderr, "no sdrplay device, trying to open a file\n");
 	}
-#endif
-	if (inputDevice == nullptr) 
-	   try {
-	      inputDevice	= new sdrplayHandler (this, dabSettings);
- 	   }
-	   catch (int e) {
-	      fprintf (stderr, "no SDRplay, trying to open a file\n");
-	   }
 
 	if (inputDevice	== nullptr) {
 	   try {
@@ -289,7 +271,6 @@ QString h;
 
 	      file	= QDir::toNativeSeparators (file);
 	      inputDevice	= new wavFiles (file);
-	      inputDevice	-> show ();
 	      hideButtons ();
 	   }
 	   catch (int e) {
@@ -364,7 +345,6 @@ void	RadioInterface::dumpControlState (QSettings *s) {
 	                      channelSelector -> currentText ());
 	s	-> setValue ("soundchannel",
 	                               streamoutSelector -> currentText ());
-	s	-> setValue ("dabBand", bandSelector -> currentText ());
 	s	-> sync ();
 }
 
@@ -898,31 +878,6 @@ void	RadioInterface::autoCorrector_on (void) {
 	my_dabProcessor		-> reset ();
 }
 
-void	RadioInterface::set_bandSelect (QString s) {
-bool	localRunning = running. load ();
-
-	if (localRunning) {
-	   running. store (false);
-	   inputDevice	-> stopReader ();
-	   fprintf (stderr, "stopReader in band select\n");
-	   inputDevice	-> resetBuffer ();
-	   clearEnsemble ();
-	}
-
-	if (s == "VHF Band III")
-	   dabBand	= BAND_III;
-	else
-	   dabBand	= L_BAND;
-
-	theBand. setupChannels (channelSelector, dabBand);
-	if (localRunning) {
-	   my_dabProcessor -> reset ();
-	   int32_t tunedFrequency	=
-	         theBand. Frequency (dabBand, channelSelector -> currentText ());
-	   inputDevice	   -> restartReader (tunedFrequency);
-	   running. store (true);
-	}
-}
 //
 //	Selecting a service is easy, the fib is asked to
 //	hand over the relevant data in two steps
@@ -1140,7 +1095,6 @@ void	RadioInterface::showButtons	(void) {
 
 	scanButton	-> show ();
 	channelSelector	-> show	();
-	bandSelector	-> show ();
 	nextChannelButton	-> show ();
 	techData. frequency	-> show ();
 
@@ -1151,7 +1105,6 @@ void	RadioInterface::hideButtons	(void) {
 //	   return;
 	scanButton	-> hide ();
 	channelSelector	-> hide ();
-	bandSelector	-> hide ();
 	nextChannelButton	-> hide ();
 	techData. frequency	-> hide ();
 }
@@ -1351,8 +1304,6 @@ void	RadioInterface::connectGUI (void) {
 	         this, SLOT (set_Scanning (void)));
 	connect (nextChannelButton, SIGNAL (clicked (void)),
 	         this, SLOT (set_nextChannel (void)));
-	connect (bandSelector, SIGNAL (activated (const QString &)),
-	         this, SLOT (set_bandSelect (const QString &)));
 	connect (dumpButton, SIGNAL (clicked (void)),
 	         this, SLOT (set_sourceDump (void)));
 	connect (audioDumpButton, SIGNAL (clicked (void)),
@@ -1382,8 +1333,6 @@ void	RadioInterface::disconnectGUI (void) {
 	            this, SLOT (set_Scanning (void)));
 	disconnect (nextChannelButton, SIGNAL (clicked (void)),
 	            this, SLOT (set_nextChannel (void)));
-	disconnect (bandSelector, SIGNAL (activated (const QString &)),
-	            this, SLOT (set_bandSelect (const QString &)));
 	disconnect (dumpButton, SIGNAL (clicked (void)),
 	            this, SLOT (set_sourceDump (void)));
 	disconnect (audioDumpButton, SIGNAL (clicked (void)),
@@ -1445,28 +1394,6 @@ void	RadioInterface::show_techData (QString		ensembleLabel,
 	
 }
 
-void	RadioInterface::antennaSwitcher (void) {
-	if (!inputDevice -> isSDRPLAY_2 ())
-	   return;
-	if (antennaSwitch_mode) {
-	   phaseOffsetDisplay	-> hide ();
-	   ((sdrplayHandler *)inputDevice)	-> antennaSwitcher (false);
-	   my_dabProcessor	-> set_phaseComputing (false);
-	   antennaSwitch	-> setText ("off");
-	}
-	else {
-	   phaseOffsetDisplay	-> show ();
-	   ((sdrplayHandler *)inputDevice)	-> antennaSwitcher (true);
-	   my_dabProcessor	-> set_phaseComputing (true);
-	   antennaSwitch	-> setText ("on");
-	}
-	antennaSwitch_mode	= !antennaSwitch_mode;
-}
-
-void	RadioInterface::showPhases	(float left, float right) {
-	phaseOffsetDisplay	-> display (0.5 - left / (left + right));
-}
-	   
 #include <QCloseEvent>
 void RadioInterface::closeEvent (QCloseEvent *event) {
 

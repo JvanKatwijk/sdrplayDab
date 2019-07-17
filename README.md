@@ -1,13 +1,32 @@
 
 sdrplayDab is experimental software for Windows, Linux and Raspberry Pi for listening to terrestrial Digital Audio Broadcasting (DAB and DAB+).
 It is derived from Qt-DAB, and designed for sole use with SDRplay RSP
-devices. It uses a  completely different approach for gain setting and
+devices. It uses a different approach for gain setting and
 for recognizing DAB frames than used in qt-dab. 
 
 ![sdrplayDab](/sdrplay-picture-1.png?raw=true)
 
 ![sdrplayDab](/sdrplay-picture-2.png?raw=true)
 
+
+
+----------------------------------------------------------------------------
+NEW FEATURES
+----------------------------------------------------------------------------
+
+As known, DAB transmissions are brought to you by more than one transmitter,
+a so-called Single Frequency Network.
+Since I am always curious which transmitters "contribute" to the
+received signals, there are two extensions:
+a. The tii window shows - if detectable - the ids of the strongest transmitters
+b. the impulse window whows - if detectable - the relative delay - in micro seconds - of the data, relative to th strongest transmitter.
+
+Of course, all these computations cost a little additional CPU time,
+therefore they are optional
+
+a. if "tii_depth=xxx" is set (xxx being 3 or 4) the tii search is done for a maximum of xxx transmitters,
+b. if "echo_depth=xxx" is set (xxx being 3 or 4) the delays of maximal xxx secondary
+transmitters are computed.
 
 -----------------------------------------------------------------------------
 Windows
@@ -18,40 +37,23 @@ The installer will install the executable of the program together with the requi
 dll's. Note that the installer will call the official installer for the dll implementing
 the api to get access to the SDRplay device
 
-------------------------------------------------------------------------------
+------------------------------------------------------------------------------------
 Linux
-------------------------------------------------------------------------------
+------------------------------------------------------------------------------------
 
-For Linux, however, one has to create an executable.
-The approach is the same as for Qt-DAB (although one obviously
-does not need to install airspy or dabstick handlers).
-A CMakeLists.txt file is part of the source tree.
-
-Either run
-	
-	qmake-qt5
-	make
-
-or
-	mkdir build
-	cd build
-	cmake ..
-	make
-
+For Linux, however, one has to create an executable. The approach is the same as for Qt-DAB
+(although one obviously does not need to install airspy or dabstick handlers).
 
 
 ------------------------------------------------------------------------------
 
 The GUI of sdrplayDab is almost equal to the GUI of qt-dab.
-No device selector is available, on program start, the program will
-poll for a connected device (by default the SDRplay, if configured,
-the LimeSDR as well).
-
-Starting the program without a connected device
+Since the device to be used is the SDRplay RSP, there
+is no device selector. Starting the program without a connected device
 will open a menu for file selection (however, note that only files
 created by sdrplayDab are suitable for processing).
 
-New is that on start up no widget is presented for the device control.
+New is that on start up no widget is presented for the SDRplay control.
 I really like to see as much as possible about the settings 
 and data of the selected service, I can imagine, however, that others just
 want to listen, without too many widgets on the screen.

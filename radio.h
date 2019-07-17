@@ -146,7 +146,6 @@ private:
         tiiViewer               *my_tiiViewer;
         RingBuffer<std::complex<float>>  *tiiBuffer;
 	QString		picturesPath;
-	bool		antennaSwitch_mode;
 public slots:
 	void		set_freqOffset		(int);
 	void		clearEnsemble		(void);
@@ -182,8 +181,6 @@ public slots:
 	void		showIQ			(int);
 	void		showQuality		(float);
 	void		show_tii		(int);
-	void		antennaSwitcher		(void);
-	void		showPhases		(float, float);
 	void		closeEvent		(QCloseEvent *event);
 	void		showTime		(const QString &);
 //	Somehow, these must be connected to the GUI
@@ -196,8 +193,6 @@ private slots:
 	void		updateTimeDisplay	(void);
 	void		signalTimer_out		(void);
 	void		autoCorrector_on	(void);
-
-	void		set_bandSelect		(QString s);
 
 	void		selectService		(QModelIndex);
 	void		selectService		(QString);

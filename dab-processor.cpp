@@ -118,7 +118,6 @@ int32_t	i;
         localBuffer. resize (bufferSize);
         localCounter            = 0;
 
-	phaseComputing		= false;
 
 	connect (this, SIGNAL (showCoordinates (int)),
                  mr,   SLOT   (showCoordinates (int)));
@@ -178,7 +177,6 @@ static	int dabCounter	= 0;
 	      avgLocalValue	= 0;
 	      counter		= 0;
 	      dipValue		= 0;
-	      dipValue_s	= 0;
 	      dipCnt		= 0;
 	      fineOffset	= 0;
 	      correctionNeeded	= true;
@@ -195,7 +193,6 @@ static	int dabCounter	= 0;
 	         processorMode	= LOOKING_FOR_DIP;
 	         retValue	= INITIAL_STRENGTH;	
 	         counter	= 0;
-	         
 	      }
 	      break;
 //
@@ -243,34 +240,19 @@ static	int dabCounter	= 0;
 	         }
 	         else {
 	            counter		= 0;
-	            processorMode       = LOOKING_FOR_DIP;
+	            processorMode       = INIT;
 	         }
-	      }
-	      break;
-
-	   case CHECK_END_DIP:
-	      ofdmBuffer [ofdmBufferIndex ++] = symbol;
-	      if (ofdmBufferIndex >= 100) {
-	         float avgValue_testPeriod = 0;
-	         for (int i = 0; i < 100; i ++)
-	            avgValue_testPeriod += abs (ofdmBuffer [i]);
-	         avgValue_testPeriod /= 100;
-	         if (avgValue_testPeriod < 2 * dipValue)
-	            processorMode	= LOOKING_FOR_DIP;
-	         else
-	            processorMode	= END_OF_DIP;
 	      }
 	      break;
 
 	   case END_OF_DIP:
 	      ofdmBuffer [ofdmBufferIndex ++] = symbol;
 	      if (ofdmBufferIndex >= T_u) {
-	         int startIndex = phaseSynchronizer. findIndex (ofdmBuffer);
+	         int startIndex = phaseSynchronizer. findIndex (ofdmBuffer, 3);
 	         if (startIndex < 0) {		// no sync
 	            if (attempts > 5) {
 	               emit No_Signal_Found ();
                        processorMode       = START;
-//	               fprintf (stderr, "%d\n", startIndex);
 	               break;
                     }
 	            else {
@@ -280,7 +262,34 @@ static	int dabCounter	= 0;
 	         }
 	         attempts	= 0;	// we made it!!!
 	         dabCounter	= dabCounter - T_u + startIndex;
-//	         fprintf (stderr, "%d %d \n", dabCounter, startIndex);
+//	         fprintf (stderr, "%d \n", dabCounter);
+	         dabCounter	= T_u - startIndex;
+	         memmove (ofdmBuffer. data (),
+	                  &((ofdmBuffer. data ()) [startIndex]),
+                           (T_u - startIndex) * sizeof (std::complex<float>));
+	         ofdmBufferIndex  = T_u - startIndex;
+	         processorMode	= GO_FOR_BLOCK_0;
+	      }
+	      break;
+
+	   case TO_NEXT_FRAME:
+	      ofdmBuffer [ofdmBufferIndex ++] = symbol;
+	      if (ofdmBufferIndex >= T_u) {
+	         int startIndex = phaseSynchronizer. findIndex (ofdmBuffer, 10);
+	         if (startIndex < 0) {		// no sync
+	            if (attempts > 5) {
+	               emit No_Signal_Found ();
+                       processorMode       = START;
+	               break;
+                    }
+	            else {
+	               processorMode = LOOKING_FOR_DIP;
+	               break;
+	            }
+	         }
+	         attempts	= 0;	// we made it!!!
+	         dabCounter	= dabCounter - T_u + startIndex;
+//	         fprintf (stderr, "%d \n", dabCounter);
 	         dabCounter	= T_u - startIndex;
 	         memmove (ofdmBuffer. data (),
 	                  &((ofdmBuffer. data ()) [startIndex]),
@@ -291,10 +300,9 @@ static	int dabCounter	= 0;
 	      break;
 
 	   case GO_FOR_BLOCK_0:
-	      ofdmBuffer [ofdmBufferIndex ++] = symbol;
-	      if (ofdmBufferIndex < T_u)
+	      ofdmBuffer [ofdmBufferIndex] = symbol;
+	      if (++ofdmBufferIndex < T_u)
 	         break;
-
 	      my_ofdmDecoder. processBlock_0 (ofdmBuffer);
 	      my_mscHandler.  processBlock_0 (ofdmBuffer. data ());
 //      Here we look only at the block_0 when we need a coarse
@@ -343,7 +351,7 @@ static	int dabCounter	= 0;
 	      break;
 
 	   case END_OF_FRAME:
-	      fineOffset += arg (FreqCorr) / M_PI * carrierDiff / 20;
+	      fineOffset = arg (FreqCorr) / M_PI * carrierDiff / 2;
 
 	      if (fineOffset > carrierDiff / 2) {
 	         coarseOffset += carrierDiff;
@@ -374,11 +382,9 @@ static	int dabCounter	= 0;
 	      dipValue		+= jan_abs (symbol);
 	      nullCount ++;
 	      if (nullCount >= T_null - 1) {
-	         processorMode = CHECK_END_DIP;
+	         processorMode = TO_NEXT_FRAME;
 	         dipValue	/= T_null;
-	         dipValue_s	= dipValue;
 	         handle_tii_detection (ofdmBuffer);
-	         ofdmBufferIndex	= 0;
 	      }
 	      break;
 	}
@@ -468,7 +474,7 @@ int	result	= coarseOffset + fineOffset;
 	   set_freqOffset (result);
 	}
 	*freq		= result;
-	*dip		= dipValue_s;
+	*dip		= dipValue;
 	*firstSymb	= avgSignalValue;
 }
 
@@ -529,9 +535,5 @@ void	dabProcessor::startDumping (SNDFILE *f) {
 
 void	dabProcessor::stopDumping (void) {
         dumpfilePointer. store (nullptr);
-}
-
-void	dabProcessor::set_phaseComputing	(bool b) {
-	phaseComputing	= b;
 }
 

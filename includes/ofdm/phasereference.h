@@ -43,22 +43,21 @@ public:
 	                                         int16_t,
 	                                         RingBuffer<float> *);
 			~phaseReference		(void);
-	int32_t		findIndex		(std::vector<std::complex<float>>);
+	int32_t		findIndex		(std::vector<std::complex<float>>, int);
 	int16_t		estimate_CarrierOffset	(std::vector<std::complex<float>>);
 	float		estimate_FrequencyOffset (std::vector<std::complex<float>>);
 //
 //	This one is used in the ofdm decoder
 	std::vector<std::complex<float>> refTable;
 private:
+	std::vector<std::complex<float>> prevTable;
 	dabParams	params;
 	fftHandler	my_fftHandler;
 	RingBuffer<float> *response;
-	std::vector<float> phaseDifferences;
 	int16_t		threshold;
 	int16_t		diff_length;
 	int16_t		depth;
 	int32_t		T_u;
-	int32_t		T_g;
 	int16_t		carriers;
 
 	std::complex<float>	*fft_buffer;
@@ -68,7 +67,6 @@ private:
 signals:
 	void		showImpulse	(int);
 	void		showIndex	(int);
-	void		showPhases	(float, float);
 };
 #endif
 

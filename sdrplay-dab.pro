@@ -248,9 +248,6 @@ LIBS		+= -lfaad
 #LIBS		+= -lqwt
 LIBS		+= -lqwt-qt5
 
-#experimental, a second device
-CONFIG		+= lime
-
 #very experimental, simple server for connecting to a tdc handler
 #CONFIG		+= datastreamer
 
@@ -262,11 +259,13 @@ CONFIG		+= lime
 #otherwise, if you want to use the default qt way of soud out
 #CONFIG		+= qt-audio
 #comment both out if you just want to use the "normal" way
+
 CONFIG		+= try-epg		# do not use
 DEFINES		+= MSC_DATA__		# use at your own risk
 DEFINES		+= PRESET_NAME
 DEFINES		+= __THREADED_BACKEND
 #DEFINES	+= SHOW_MISSED
+#DEFINES	+=  __SHOW_PHASEDIFFERENCE__
 }
 #
 # an attempt to have it run under W32 through cross compilation
@@ -282,8 +281,8 @@ exists ("./.git") {
    }
 }
 
-QMAKE_CFLAGS	+=  -O3 -ffast-math
-QMAKE_CXXFLAGS	+=  -O3 -ffast-math
+QMAKE_CFLAGS	+=  -lfto -ffast-math
+QMAKE_CXXFLAGS	+=  -ltfo -ffast-math
 isEmpty(GITHASHSTRING) {
     DEFINES += GITHASH=\\\"------\\\"
 }
@@ -310,9 +309,6 @@ LIBS		+= -lz
 #LIBS		+= -lqwt
 LIBS		+= -lqwt-qt5
 LIBS		+= -lmir_sdr_api
-
-#experimental, a second device
-CONFIG		+= lime
 
 #very experimental, simple server for connecting to a tdc handler
 #CONFIG		+= datastreamer
@@ -368,17 +364,6 @@ datastreamer	{
 	INCLUDEPATH	+= ./server-thread
 	HEADERS		+= ./server-thread/tcp-server.h
 	SOURCES		+= ./server-thread/tcp-server.cpp
-}
-
-lime  {
-        DEFINES         += HAVE_LIMESDR
-        INCLUDEPATH     += ./devices/lime-handler
-	DEPENDPATH	+= ./devices/lime-handler
-	HEADERS		+= ./devices/lime-handler/LMS7002M_parameters.h \
-			   ./devices/lime-handler/LimeSuite.h \
-        		   ./devices/lime-handler/lime-handler.h
-        SOURCES         += ./devices/lime-handler/lime-handler.cpp
-        FORMS           += ./devices/lime-handler/lime-widget.ui
 }
 
 
