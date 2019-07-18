@@ -50,6 +50,7 @@ Linux on an RPI 2/3
 
 For use on an RPI (2/3 were tested) an appImage is part of the latest release.
 Use is easy:
+
   Install the driver software for the SDRplay (www.sdrplay.com)
   Download the appImage sdrplay-dab-ARM.appImage
   Chmod 777 sdrplay-dab-ARM.appImage
