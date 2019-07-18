@@ -38,12 +38,24 @@ dll's. Note that the installer will call the official installer for the dll impl
 the api to get access to the SDRplay device
 
 ------------------------------------------------------------------------------------
-Linux
+Linux x64
 ------------------------------------------------------------------------------------
 
 For Linux, however, one has to create an executable. The approach is the same as for Qt-DAB
 (although one obviously does not need to install airspy or dabstick handlers).
 
+----------------------------------------------------------------------------------------
+Linux on an RPI 2/3
+----------------------------------------------------------------------------------------
+
+For use on an RPI (2/3 were tested) an appImage is part of the latest release.
+Use is easy:
+  Install the driver software for the SDRplay (www.sdrplay.com)
+  Download the appImage sdrplay-dab-ARM.appImage
+  Chmod 777 sdrplay-dab-ARM.appImage
+  ./sdrplay-dab-ARM.appImage
+  
+  Note that - as the name suggests - the SDRplay RSP devices are the only devices supported.
 
 ------------------------------------------------------------------------------
 
