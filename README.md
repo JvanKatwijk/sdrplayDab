@@ -18,6 +18,7 @@ As known, DAB transmissions are brought to you by more than one transmitter,
 a so-called Single Frequency Network.
 Since I am always curious which transmitters "contribute" to the
 received signals, there are two extensions:
+
 a. The tii window shows - if detectable - the ids of the strongest transmitters
 b. the impulse window whows - if detectable - the relative delay - in micro seconds - of the data, relative to th strongest transmitter.
 
@@ -52,8 +53,11 @@ For use on an RPI (2/3 were tested) an appImage is part of the latest release.
 Use is easy:
 
   a. Install the driver software for the SDRplay (www.sdrplay.com)
+  
   b. Download the appImage sdrplay-dab-ARM.appImage
+  
   c. Chmod 777 sdrplay-dab-ARM.appImage
+  
   d. ./sdrplay-dab-ARM.appImage
   
   Note that - as the name suggests - the SDRplay RSP devices are the only devices supported.
