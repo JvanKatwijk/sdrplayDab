@@ -65,26 +65,37 @@
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #ifndef __RINGBUFFER__
 #define	__RINGBUFFER__
-#include	<stdlib.h>
-#include	<stdio.h>
-#include	<string.h>
-#include	<stdint.h>
+#include	<cstdlib>
+#include	<cstdio>
+#include	<cstring>
+#include	<cstdint>
 /*
  *	a simple ringbuffer, lockfree, however only for a
  *	single reader and a single writer.
  *	Mostly used for getting samples from or to the soundcard
  */
-#if defined(__APPLE__)
-#   include <libkern/OSAtomic.h>
-    /* Here are the memory barrier functions. Mac OS X only provides
+#ifdef __APPLE__
+#include <libkern/OSAtomic.h>
+#ifdef OSATOMIC_DEPRECATED
+#include <atomic>
+#endif
+#
+    /* Mac OS X only provides
        full memory barriers, so the three types of barriers are the same,
        however, these barriers are superior to compiler-based ones. */
-#   define PaUtil_FullMemoryBarrier()  OSMemoryBarrier()
-#   define PaUtil_ReadMemoryBarrier()  OSMemoryBarrier()
-#   define PaUtil_WriteMemoryBarrier() OSMemoryBarrier()
+
+inline void Apple_MemoryBarrier() {
+#ifdef OSATOMIC_DEPRECATED
+  std::atomic_thread_fence(std::memory_order_seq_cst);
+#else
+  OSMemoryBarrier();
+#endif  
+}
+#   define PaUtil_FullMemoryBarrier()  Apple_MemoryBarrier()
+#   define PaUtil_ReadMemoryBarrier()  Apple_MemoryBarrier()
+#   define PaUtil_WriteMemoryBarrier() Apple_MemoryBarrier()
 #elif defined(__GNUC__)
     /* GCC >= 4.1 has built-in intrinsics. We'll use those */
 #   if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 1)
@@ -146,7 +157,7 @@ public:
 	bigMask		= (elementCount * 2) - 1;
 }
 
-	~RingBuffer () {
+    ~RingBuffer() {
 	   delete[]	 buffer;
 }
 
@@ -154,23 +165,23 @@ public:
  * 	functions for checking available data for reading and space
  * 	for writing
  */
-int32_t	GetRingBufferReadAvailable (void) {
+int32_t	GetRingBufferReadAvailable() {
 	return (writeIndex - readIndex) & bigMask;
 }
 
-int32_t	ReadSpace	(void){
-	return GetRingBufferReadAvailable ();
+int32_t	ReadSpace(){
+    return GetRingBufferReadAvailable();
 }
 
-int32_t	GetRingBufferWriteAvailable (void) {
-	return  bufferSize - GetRingBufferReadAvailable ();
+int32_t	GetRingBufferWriteAvailable() {
+    return  bufferSize - GetRingBufferReadAvailable();
 }
 
-int32_t	WriteSpace	(void) {
-	return GetRingBufferWriteAvailable ();
+int32_t	WriteSpace() {
+    return GetRingBufferWriteAvailable();
 }
 
-void	FlushRingBuffer () {
+void	FlushRingBuffer() {
 	writeIndex	= 0;
 	readIndex	= 0;
 }
@@ -201,7 +212,7 @@ int32_t GetRingBufferWriteRegions (uint32_t elementCount,
                                    void **dataPtr1, int32_t *sizePtr1,
                                    void **dataPtr2, int32_t *sizePtr2 ) {
 uint32_t   index;
-uint32_t   available = GetRingBufferWriteAvailable ();
+uint32_t   available = GetRingBufferWriteAvailable();
 
 	if (elementCount > available)
 	   elementCount = available;
@@ -219,7 +230,7 @@ uint32_t   available = GetRingBufferWriteAvailable ();
 	else {		// fits
 	   *dataPtr1	= &buffer [index * sizeof(elementtype)];
 	   *sizePtr1	= elementCount;
-	   *dataPtr2	= NULL;
+	   *dataPtr2	= nullptr;
 	   *sizePtr2	= 0;
 	}
 
@@ -239,7 +250,7 @@ int32_t GetRingBufferReadRegions (uint32_t elementCount,
 	                          void **dataPtr1, int32_t *sizePtr1,
 	                          void **dataPtr2, int32_t *sizePtr2) {
 uint32_t   index;
-uint32_t   available = GetRingBufferReadAvailable (); /* doesn't use memory barrier */
+uint32_t   available = GetRingBufferReadAvailable(); /* doesn't use memory barrier */
 
 	if (elementCount > available)
 	   elementCount = available;
@@ -257,7 +268,7 @@ uint32_t   available = GetRingBufferReadAvailable (); /* doesn't use memory barr
 	else {
 	   *dataPtr1 = &buffer [index * sizeof(elementtype)];
 	   *sizePtr1 = elementCount;
-	   *dataPtr2 = NULL;
+	   *dataPtr2 = nullptr;
 	   *sizePtr2 = 0;
 	}
     
@@ -309,9 +320,9 @@ void	*data2;
 
 int32_t	skipDataInBuffer (uint32_t n_values) {
 //	ensure that we have the correct read and write indices
-	PaUtil_FullMemoryBarrier ();
-	if (n_values > GetRingBufferReadAvailable ())
-	   n_values = GetRingBufferReadAvailable ();
+    PaUtil_FullMemoryBarrier();
+    if ((int)n_values > GetRingBufferReadAvailable())
+       n_values = GetRingBufferReadAvailable();
 	AdvanceRingBufferReadIndex (n_values);
 	return n_values;
 }

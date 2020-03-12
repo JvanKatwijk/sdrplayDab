@@ -7,15 +7,16 @@
 #ifndef	__REED_SOLOMON
 #define	__REED_SOLOMON
 
-#include	<stdint.h>
+#include	<cstdint>
 #include	"galois.h"
+#include	<vector>
 
 class	reedSolomon {
 private:
 	galois	myGalois;
 	uint16_t symsize;	/* Bits per symbol */
 	uint16_t codeLength;	/* Symbols per block (= (1<<mm)-1) */
-	uint8_t *generator;	/* Generator polynomial */
+	std::vector<uint8_t> generator;	/* Generator polynomial */
 	uint16_t nroots;	/* Number of generator roots = number of parity symbols */
 	uint8_t fcr;		/* First consecutive root, index form */
 	uint8_t prim;		/* Primitive element, index form */
@@ -35,7 +36,7 @@ public:
 	                     uint16_t fcr	= 0,
 	                     uint16_t prim	= 1,
 	                     uint16_t nroots	= 10);
-		~reedSolomon (void);
+		~reedSolomon();
 int16_t		dec	  (const uint8_t *data_in, uint8_t *data_out, int16_t cutlen);
 void		enc	  (const uint8_t *data_in, uint8_t *data_out, int16_t cutlen);
 };

@@ -24,10 +24,10 @@
 #include	"text-mapper.h"
 
 
-	textMapper :: textMapper (void) {
+	textMapper :: textMapper() {
 }
 
-	textMapper :: ~textMapper (void) {
+	textMapper :: ~textMapper() {
 }
 
 static 
@@ -61,7 +61,7 @@ const char *table12 [] = {
 "National Music",
 "Oldies Music",
 "Folk Music",
-"commentary",
+"Documentary",
 "entry 30 not used",
 "entry 31 not used"
 };
@@ -220,7 +220,7 @@ const char *textMapper::get_programm_language_string (int16_t language) {
 	else if (language < 0x40)
 	   return table9[language];
 	else if (language < 0x7d)
-	   return table10[language-0x40];
+	   return table10 [language - 0x40];
 	fprintf(stderr, "GUI: wrong language (%d)\n", language);
 	return table9[0];
 }

@@ -1,5 +1,5 @@
 cmake_minimum_required( VERSION 2.8.11 )
-set (objectName sdrplayDab-2.1)
+set (objectName sdrplayDab-3.3)
 set (CMAKE_CXX_FLAGS "${CMAKE_XCC_FLAGS} -Wall -std=c++11 -flto")
 set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto")
 
@@ -50,13 +50,7 @@ list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
 #	default value
 	set(USE_PORTAUDIO true)
 
-#(DEFINED SDRPLAY)
    set(SDRPLAY true)
-#endif ()
-
-if(DEFINED LIMESDR)
-   set(LIMESDR true)
-endif ()
 
 if (DEFINED DATA_STREAMER)
    set(DATA_STREAMER true)
@@ -87,8 +81,10 @@ add_definitions (-DTHREADED_DECODING)	# uncomment for use for an RPI
 	find_package (Qt5Core REQUIRED)
 	find_package (Qt5Widgets REQUIRED)
 	find_package (Qt5Network REQUIRED)
+	find_package (Qt5Xml REQUIRED)
 	include_directories (
 	  ${Qt5Network_INCLUDE_DIRS}
+	  ${Qt5Xml_INCLUDE_DIRS}
 	)
 
 	find_package(Qwt)
@@ -155,12 +151,14 @@ add_definitions (-DTHREADED_DECODING)	# uncomment for use for an RPI
 	           ./includes/backend/data/mot
 	           ./includes/support
 	           ./includes/support/viterbi-jan
+	           ./includes/support/viterbi-spiral
 	           ./includes/output
 	           ./includes/scopes-qwt6
 	           ./devices
 	           ./devices/wavfiles
+	           ./devices/sdrplay-handler
 	           ./spectrum-viewer
-	           ./impulse-viewer
+	           ./correlation-viewer
 	           ./tii-viewer
 	           /usr/include/
 	)
@@ -177,6 +175,8 @@ add_definitions (-DTHREADED_DECODING)	# uncomment for use for an RPI
 	     ./includes/ofdm/phasetable.h
 	     ./includes/ofdm/freq-interleaver.h
 	     ./includes/ofdm/fib-decoder.h
+	     ./includes/ofdm/dab-config.h
+	     ./includes/ofdm/fib-table.h
 	     ./includes/ofdm/fic-handler.h
 	     ./includes/ofdm/tii_table.h
 	     ./includes/ofdm/tii_detector.h
@@ -195,6 +195,7 @@ add_definitions (-DTHREADED_DECODING)	# uncomment for use for an RPI
 	     ./includes/backend/backend-driver.h
 	     ./includes/backend/audio/faad-decoder.h
 	     ./includes/backend/audio/mp4processor.h
+	     ./includes/backend/audio/bitWriter.h
 	     ./includes/backend/audio/mp2processor.h
 	     ./includes/backend/data/ip-datahandler.h
 	     ./includes/backend/data/tdc-datahandler.h
@@ -227,9 +228,18 @@ add_definitions (-DTHREADED_DECODING)	# uncomment for use for an RPI
 	     ./includes/support/dab_tables.h
 	     ./includes/support/ensemble-printer.h
 	     ./includes/support/viterbi-jan/viterbi-handler.h
+	     ./includes/support/viterbi-spiral/viterbi-spiral.h
+             ./includes/support/preset-handler.h
+             ./includes/support/presetcombobox.h
+             ./includes/support/smallqlistview.h
+             ./includes/support/smallpushbutton.h
+             ./includes/support/verysmallpushbutton.h
+             ./includes/support/smallcombobox.h
+             ./includes/support/history-handler.h
+             ./includes/support/scanner-table.h
 	     ./includes/scopes-qwt6/iqdisplay.h
 	     ./spectrum-viewer/spectrum-viewer.h 
-	     ./impulse-viewer/impulse-viewer.h 
+	     ./correlation-viewer/correlation-viewer.h 
 	     ./tii-viewer/tii-viewer.h
 	)
 
@@ -245,14 +255,12 @@ add_definitions (-DTHREADED_DECODING)	# uncomment for use for an RPI
 	     ./src/ofdm/freq-interleaver.cpp
 	     ./src/ofdm/fib-decoder.cpp
 	     ./src/ofdm/fic-handler.cpp
-	     ./src/ofdm/tii_table.cpp
 	     ./src/ofdm/tii_detector.cpp
 	     ./src/protection/protTables.cpp
 	     ./src/protection/protection.cpp
 	     ./src/protection/eep-protection.cpp
 	     ./src/protection/uep-protection.cpp
 	     ./src/backend/firecode-checker.cpp
-	     ./src/backend/frame-processor.cpp
 	     ./src/backend/charsets.cpp
 	     ./src/backend/galois.cpp
 	     ./src/backend/reed-solomon.cpp
@@ -262,6 +270,7 @@ add_definitions (-DTHREADED_DECODING)	# uncomment for use for an RPI
 	     ./src/backend/backend-driver.cpp
 	     ./src/backend/audio/faad-decoder.cpp
 	     ./src/backend/audio/mp4processor.cpp
+	     ./src/backend/audio/bitWriter.cpp
 	     ./src/backend/audio/mp2processor.cpp
 	     ./src/backend/data/ip-datahandler.cpp
 	     ./src/backend/data/journaline-datahandler.cpp
@@ -272,7 +281,6 @@ add_definitions (-DTHREADED_DECODING)	# uncomment for use for an RPI
 	     ./src/backend/data/journaline/dabdgdec_impl.c
 	     ./src/backend/data/journaline/newsobject.cpp
 	     ./src/backend/data/journaline/NML.cpp
-	     ./src/backend/data/virtual-datahandler.cpp
 	     ./src/backend/data/tdc-datahandler.cpp
 	     ./src/backend/data/pad-handler.cpp
 	     ./src/backend/data/mot/mot-handler.cpp
@@ -292,9 +300,19 @@ add_definitions (-DTHREADED_DECODING)	# uncomment for use for an RPI
 	     ./src/support/dab_tables.cpp
 	     ./src/support/ensemble-printer.cpp
 	     ./src/support/viterbi-jan/viterbi-handler.cpp
+	     ./src/support/viterbi-spiral/viterbi-spiral.cpp
+             ./src/support/scanner-table.cpp
+	     ./src/support/preset-handler.cpp
+             ./src/support/presetcombobox.cpp
+             ./src/support/smallqlistview.cpp
+             ./src/support/smallpushbutton.cpp
+             ./src/support/verysmallpushbutton.cpp
+             ./src/support/smallcombobox.cpp
+             ./src/support/history-handler.cpp
+
 	     ./src/scopes-qwt6/iqdisplay.cpp 
 	     ./spectrum-viewer/spectrum-viewer.cpp 
-	     ./impulse-viewer/impulse-viewer.cpp 
+	     ./correlation-viewer/correlation-viewer.cpp 
 	     ./tii-viewer/tii-viewer.cpp
 	)
 
@@ -307,7 +325,7 @@ add_definitions (-DTHREADED_DECODING)	# uncomment for use for an RPI
 	     ./includes/ofdm/fib-decoder.h
 	     ./includes/ofdm/fic-handler.h
 	     ./includes/ofdm/tii_detector.h
-	     ./includes/ofdm/tii_table.h
+	     ./includes/backend/msc-handler.h
 	     ./includes/backend/backend.h
 	     ./includes/backend/audio/faad-decoder.h
 	     ./includes/backend/audio/mp2processor.h
@@ -321,10 +339,17 @@ add_definitions (-DTHREADED_DECODING)	# uncomment for use for an RPI
 	     ./includes/backend/data/tdc-datahandler.h
 	     ./includes/backend/data/journaline-datahandler.h
 	     ./includes/backend/data/data-processor.h
-	     ./devices/wavfiles/wavfiles.h
+	     ./includes/support/preset-handler.h
+             ./includes/support/presetcombobox.h
+             ./includes/support/smallqlistview.h
+             ./includes/support/smallpushbutton.h
+             ./includes/support/verysmallpushbutton.h
+             ./includes/support/smallcombobox.h
+             ./includes/support/history-handler.h
+             ./includes/support/scanner-table.h
 	     ./includes/scopes-qwt6/iqdisplay.h
 	     ./spectrum-viewer/spectrum-viewer.h 
-	     ./impulse-viewer/impulse-viewer.h 
+	     ./correlation-viewer/correlation-viewer.h 
  	     ./tii-viewer/tii-viewer.h
 	)
 
@@ -335,7 +360,7 @@ add_definitions (-DTHREADED_DECODING)	# uncomment for use for an RPI
 	     ./forms/audio-description.ui
 	     ./forms/data-description.ui
 	     ./spectrum-viewer/scopewidget.ui
-	     ./impulse-viewer/impulse-widget.ui
+	     ./correlation-viewer/correlation-widget.ui
 	     ./tii-viewer/tii-widget.ui
 	   )
 
@@ -347,6 +372,42 @@ add_definitions (-DTHREADED_DECODING)	# uncomment for use for an RPI
 
 	set (${objectName}_SRCS
 	        ${${objectName}_SRCS} ./radio.cpp)
+
+#########################################################################
+#	the viterbi decoder
+#
+	if (VITERBI_NEON)
+	   set(VITERBI_SSE false)
+	   set ($(objectName)_HDRS
+	        ${${objectName}_HDRS}
+	        ./src/support/viterbi-spiral/spiral-neon.h
+	   )
+	   set (${objectName}_SRCS
+	        ${${objectName}_SRCS}
+	        ./src/support/viterbi-spiral/spiral-neon.c
+	   )
+	   
+	   add_definitions (-DNEON_AVAILABLE)
+	elseif(VITERBI_SSE)
+	   set ($(objectName)_HDRS
+	        ${${objectName}_HDRS}
+	        ./src/support/viterbi-spiral/spiral-sse.h
+	   )
+	   set (${objectName}_SRCS
+	        ${${objectName}_SRCS}
+	        ./src/support/viterbi-spiral/spiral-sse.c
+	   )
+	   add_definitions (-DSSE_AVAILABLE)
+	else (VITERBI_SSE)
+	   set ($(objectName)_HDRS
+	        ${${objectName}_HDRS}
+	        ./src/support/viterbi-spiral/spiral-no-sse.h
+	   )
+	   set (${objectName}_SRCS
+	        ${${objectName}_SRCS}
+	        ./src/support/viterbi-spiral/spiral-no-sse.c
+	   )
+	endif (VITERBI_NEON)
 
 
 ##########################################################################
@@ -400,141 +461,6 @@ add_definitions (-DTHREADED_DECODING)	# uncomment for use for an RPI
 
 	 add_definitions (-DHAVE_SDRPLAY)
 	endif (SDRPLAY)
-
-	if (AIRSPY)
-#           find_package(LibAIRSPY)
-#           if (NOT LIBAIRSPY_FOUND)
-#               message(FATAL_ERROR "please install airspy library")
-#           endif ()
-#	   ## include_directories (${AIRSPYLIB_INCLUDE_DIR})
-
-	   set (${objectName}_UIS
-	        ${${objectName}_UIS}
-	        ./devices/airspy-handler/airspy-widget.ui
-	   )
-
-	   set (${objectName}_MOCS
-	        ${${objectName}_MOCS}
-	        ./devices/airspy-handler/airspy-handler.h
-	   )
-
-	   include_directories (
-	     ./devices/airspy-handler
-	     ./devices/airspy-handler/libairspy
-	   )
-
-	   set ($(objectName)_HDRS
-	        ${${objectName}_HDRS}
-	        ./devices/airspy-handler/airspy-handler.h
-	        ./devices/airspy-handler/airspyfilter.h
-	        ./devices/airspy-handler/libairspy/airspy.h
-	   )
-
-	   set (${objectName}_SRCS
-	        ${${objectName}_SRCS}
-	        ./devices/airspy-handler/airspy-handler.cpp
-	        ./devices/airspy-handler/airspyfilter.cpp
-	   )
-
-	   add_definitions (-DHAVE_AIRSPY)
-	endif (AIRSPY)
-
-	if (HACKRF)
-	   set (${objectName}_UIS
-	        ${${objectName}_UIS}
-	        ./devices/hackrf-handler/hackrf-widget.ui
-	   )
-
-	   set (${objectName}_MOCS
-	        ${${objectName}_MOCS}
-	        ./devices/hackrf-handler/hackrf-handler.h
-	   )
-
-	   include_directories (
-	     ./devices/hackrf-handler
-	     ./devices/hackrf-handler/libhackrf
-	   )
-
-	   set ($(objectName)_HDRS
-	        ${${objectName}_HDRS}
-	        ./devices/hackrf-handler/hackrf-handler.h
-	        ./devices/hackrf-handler/libhackrf/hackrf.h
-	   )
-
-	   set (${objectName}_SRCS
-	        ${${objectName}_SRCS}
-	        ./devices/hackrf-handler/hackrf-handler.cpp
-	   )
-
-	   add_definitions (-DHAVE_HACKRF)
-	endif (HACKRF)
-#
-	if (LIMESDR)
-	   set (${objectName}_UIS
-	        ${${objectName}_UIS}
-	        ./devices/lime-handler/lime-widget.ui
-	   )
-
-	   set (${objectName}_MOCS
-	        ${${objectName}_MOCS}
-	        ./devices/lime-handler/lime-handler.h
-	   )
-
-	   include_directories (
-	     ./devices/lime-handler
-	   )
-
-	   set ($(objectName)_HDRS
-	        ${${objectName}_HDRS}
-	        ./devices/lime-handler/lime-handler.h
-	        ./devices/lime-handler/LimeSuite.h
-	        ./devices/lime-handler/LMS7002M_parameters.h
-	   )
-
-	   set (${objectName}_SRCS
-	        ${${objectName}_SRCS}
-	        ./devices/lime-handler/lime-handler.cpp
-	   )
-
-	   add_definitions (-DHAVE_LIME)
-	endif (LIMESDR)
-
-	if (RTLSDR)
-	   find_package(LibRTLSDR)
-	   if (NOT LIBRTLSDR_FOUND)
-	       message(FATAL_ERROR "please install librtlsdr")
-	   endif ()
-	   ###include_directories (${RTLSDR_INCLUDE_DIR})
-
-	   set (${objectName}_UIS
-	        ${${objectName}_UIS}
-	        ./devices/rtlsdr-handler/rtlsdr-widget.ui
-	   )
-
-	   set (${objectName}_MOCS
-	        ${${objectName}_MOCS}
-	        ./devices/rtlsdr-handler/rtl-dongleselect.h
-	        ./devices/rtlsdr-handler/rtlsdr-handler.h
-	   )
-
-	   include_directories (
-	        ./devices/rtlsdr-handler/
-	   )
-
-	   set (${objectName}_HDRS
-	        ${${objectName}_HDRS}
-	        ./devices/rtlsdr-handler/rtlsdr-handler.h
-	        ./devices/rtlsdr-handler/rtl-dongleselect.h
-	   )
-
-	   set (${objectName}_SRCS
-	        ${${objectName}_SRCS}
-	        ./devices/rtlsdr-handler/rtlsdr-handler.cpp
-	        ./devices/rtlsdr-handler/rtl-dongleselect.cpp
-	   )
-
-	   add_definitions (-DHAVE_RTLSDR)
-	endif()
 #
 	if (TCP_STREAMER)
 	   add_definitions (-DTCP_STREAMER)
@@ -689,7 +615,7 @@ add_definitions (-DTHREADED_DECODING)	# uncomment for use for an RPI
 	target_link_libraries (${objectName}
 	                       Qt5::Widgets
 	                       Qt5::Network
-	                       ${RTLTCP_lib}
+	                       Qt5::Xml
 	                       ${FFTW3F_LIBRARIES}
 	                       ${extraLibs}
 	                       ${FAAD_LIBRARIES}

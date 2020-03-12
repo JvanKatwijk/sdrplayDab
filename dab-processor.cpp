@@ -1,10 +1,11 @@
 #
 /*
- *    Copyright (C) 2014 .. 2017
+ *    Copyright (C) 2017 .. 2020
  *    Jan van Katwijk (J.vanKatwijk@gmail.com)
  *    Lazy Chair Computing
  *
  *    This file is part of the sdrplayDab program
+ *
  *    sdrplayDab is free software; you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation; either version 2 of the License, or
@@ -55,6 +56,7 @@ int16_t res     = 1;
 	                                 int16_t	bitDepth,
 	                                 int16_t	tii_depth,
 	                                 int16_t	echo_depth,
+	                                 QString	picturesPath,
 	                                 RingBuffer<float> *responseBuffer,
 	                                 RingBuffer<std::complex<float>> *
 	                                                   spectrumBuffer,
@@ -62,12 +64,13 @@ int16_t res     = 1;
 	                                                   iqBuffer,
 	                                 RingBuffer<std::complex<float>> *
 	                                                   tiiBuffer,
-	                                 QString	picturesPath
+	                                 RingBuffer<uint8_t> *frameBuffer
 	                                 ):
 	                                 params (dabMode),
 	                                 my_ficHandler (mr, dabMode),
 	                                 my_mscHandler (mr, dabMode,
-	                                                picturesPath),
+	                                                picturesPath,
+	                                                frameBuffer),
 	                                 phaseSynchronizer (mr,
 	                                                    dabMode, 
                                                             threshold,
@@ -77,8 +80,8 @@ int16_t res     = 1;
 	                                 my_TII_Detector (dabMode, tii_depth),
 	                                 my_ofdmDecoder (mr,
 	                                                 dabMode,
-	                                                 iqBuffer,
-	                                                 bitDepth) {
+	                                                 bitDepth,
+	                                                 iqBuffer) {
 int32_t	i;
 
 	this	-> myRadioInterface	= mr;
@@ -119,21 +122,20 @@ int32_t	i;
         localCounter            = 0;
 
 
-	connect (this, SIGNAL (showCoordinates (int)),
-                 mr,   SLOT   (showCoordinates (int)));
-	connect (this, SIGNAL (showSecondaries (int)),
-	         mr,   SLOT   (showSecondaries (int)));
-	connect (this, SIGNAL (setSynced (char)),
-	         myRadioInterface, SLOT (setSynced (char)));
+	connect (this, SIGNAL (show_snr (int)),
+	         myRadioInterface, SLOT (show_snr (int)));
+	connect (this, SIGNAL (setSynced (bool)),
+	         myRadioInterface, SLOT (setSynced (bool)));
 	connect (this, SIGNAL (set_freqOffset (int)),
-	         myRadioInterface, SLOT (set_freqOffset (int)));
+	         myRadioInterface, SLOT (set_CorrectorDisplay (int)));
         connect (this, SIGNAL (show_Spectrum (int)),
                  mr, SLOT (showSpectrum (int)));
-	connect (this, SIGNAL (show_tii (int)),
-	         myRadioInterface, SLOT (show_tii (int)));
+	connect (this, SIGNAL (show_tii (QByteArray)),
+                 myRadioInterface, SLOT (show_tii (QByteArray)));
 	connect (this, SIGNAL (No_Signal_Found (void)),
 	         myRadioInterface, SLOT (No_Signal_Found (void)));
 	my_TII_Detector. reset ();
+	my_mscHandler. start ();
 }
 
 	dabProcessor::~dabProcessor	(void) {
@@ -147,6 +149,7 @@ int	dabProcessor::addSymbol	(std::complex<float> symbol) {
 int	retValue	= GO_ON;		// default
 
 static	int dabCounter	= 0;
+static int lTel		= 0;
 
 	avgSignalValue	= 0.9999 * avgSignalValue +
 	                  0.0001 * jan_abs (symbol);
@@ -192,6 +195,7 @@ static	int dabCounter	= 0;
 	      if (++counter >= 2 * T_F) {
 	         processorMode	= LOOKING_FOR_DIP;
 	         retValue	= INITIAL_STRENGTH;	
+	         setSynced	(false);
 	         counter	= 0;
 	      }
 	      break;
@@ -231,7 +235,7 @@ static	int dabCounter	= 0;
 	         ofdmBufferIndex	= 0;
 	      }
 	      else 
-	      if (dipCnt > T_null + 100) {
+	      if (dipCnt > T_null + 100) {	// no luck here
 	         dipCnt		= 0;
 	         attempts ++;
 	         if (attempts > 5) {
@@ -262,13 +266,13 @@ static	int dabCounter	= 0;
 	         }
 	         attempts	= 0;	// we made it!!!
 	         dabCounter	= dabCounter - T_u + startIndex;
-//	         fprintf (stderr, "%d \n", dabCounter);
 	         dabCounter	= T_u - startIndex;
 	         memmove (ofdmBuffer. data (),
 	                  &((ofdmBuffer. data ()) [startIndex]),
                            (T_u - startIndex) * sizeof (std::complex<float>));
 	         ofdmBufferIndex  = T_u - startIndex;
 	         processorMode	= GO_FOR_BLOCK_0;
+	         setSynced (true);
 	      }
 	      break;
 
@@ -314,7 +318,7 @@ static	int dabCounter	= 0;
 	         if (correction != 100) {
 	            coarseOffset   = correction * carrierDiff;
 	            totalOffset	+= coarseOffset;
-	            if (abs (totalOffset) > Khz (15)) {
+	            if (abs (totalOffset) > Khz (25)) {
 	               totalOffset	= 0;
 	               coarseOffset	= 0;
 	            }
@@ -342,6 +346,7 @@ static	int dabCounter	= 0;
 	                                 ofdmSymbolCount, ibits. data ());
 	         my_ficHandler. process_ficBlock (ibits, ofdmSymbolCount);
 	      }
+
 	      my_mscHandler. process_Msc  (&((ofdmBuffer. data ()) [T_g]),
 	                                   ofdmSymbolCount);
 	      ofdmBufferIndex	= 0;
@@ -412,58 +417,73 @@ void	dabProcessor::coarseCorrectorOff (void) {
 	correctionNeeded	= false;
 }
 
-//	just a convenience function
-bool	dabProcessor::is_audioService	(QString &s) {
+//	just a convenience functions
+
+QString	dabProcessor::findService		(uint32_t SId, int SCIds) {
+	return my_ficHandler. findService (SId, SCIds);
+}
+
+void	dabProcessor::getParameters		(const QString &s,
+	                                         uint32_t *p_SId, int*p_SCIds) {
+	my_ficHandler. getParameters (s, p_SId, p_SCIds);
+}
+
+QStringList	dabProcessor::getServices	() {
+	return my_ficHandler. getServices ();
+}
+
+bool	dabProcessor::is_audioService	(const QString &s) {
 audiodata ad;
-	my_ficHandler. dataforAudioService (s, &ad, 0);
+	my_ficHandler. dataforAudioService (s, &ad);
 	return ad. defined;
 }
 
-bool	dabProcessor::is_packetService	(QString &s) {
+bool	dabProcessor::is_packetService	(const QString &s) {
 packetdata pd;
 	my_ficHandler. dataforPacketService (s, &pd, 0);
 	return pd. defined;
 }
 
-void	dabProcessor::dataforAudioService	(QString &s,
-	                                          audiodata *d, int16_t c) {
-	my_ficHandler. dataforAudioService (s, d, c);
+void	dabProcessor::dataforAudioService	(const QString &s,
+	                                         audiodata *d) {
+	my_ficHandler. dataforAudioService (s, d);
 }
 
-void	dabProcessor::dataforPacketService	(QString &s,
-	                                         packetdata *d, int16_t c) {
-	my_ficHandler. dataforPacketService (s, d, c);
+void	dabProcessor::dataforPacketService	(const QString &s,
+	                                         packetdata *pd,
+	                                         int16_t compnr) {
+	my_ficHandler. dataforPacketService (s, pd, compnr);
 }
 
-void	dabProcessor::reset_msc (void) {
-	my_mscHandler. reset ();
+void	dabProcessor::reset_msc() {
+	my_mscHandler. reset();
 }
 
-void	dabProcessor::set_audioChannel (audiodata *d,
+void    dabProcessor::set_audioChannel (audiodata *d,
 	                                      RingBuffer<int16_t> *b) {
 	my_mscHandler. set_Channel (d, b, (RingBuffer<uint8_t> *)nullptr);
 }
 
-void	dabProcessor::set_dataChannel (packetdata *d,
+void    dabProcessor::set_dataChannel (packetdata *d,
 	                                      RingBuffer<uint8_t> *b) {
 	my_mscHandler. set_Channel (d, (RingBuffer<int16_t> *)nullptr, b);
 }
 
-uint8_t	dabProcessor::get_ecc		(void) {
-	return my_ficHandler. get_ecc ();
+uint8_t	dabProcessor::get_ecc() {
+	return my_ficHandler. get_ecc();
 }
 
-int32_t dabProcessor::get_ensembleId	(void) {
-	return my_ficHandler. get_ensembleId ();
+int32_t dabProcessor::get_ensembleId() {
+	return my_ficHandler. get_ensembleId();
 }
 
-QString dabProcessor::get_ensembleName	(void) {
-	return my_ficHandler. get_ensembleName ();
+QString dabProcessor::get_ensembleName() {
+	return my_ficHandler. get_ensembleName();
 }
 
-void	dabProcessor::clearEnsemble	(void) {
-	my_ficHandler. clearEnsemble ();
-}
+//void	dabProcessor::clearEnsemble() {
+//	my_ficHandler. clearEnsemble();
+//}
 
 static int teller	= 0;
 
@@ -476,6 +496,8 @@ int	result	= coarseOffset + fineOffset;
 	*freq		= result;
 	*dip		= dipValue;
 	*firstSymb	= avgSignalValue;
+	show_snr (10 * log10 (avgSignalValue / 2048.0) -
+	                             10 * log10 (dipValue / 2048.0));
 }
 
 float	dabProcessor::initialSignal	(void) {
@@ -499,22 +521,16 @@ void	dabProcessor::handle_tii_detection
 	                      (std::vector<std::complex<float>> b) {
 	if (dabMode != 1)
 	   return;
-	if (wasSecond (my_ficHandler. get_CIFcount (), &params)) {
+	if (wasSecond (my_ficHandler. get_CIFcount(), &params)) {
 	   my_TII_Detector. addBuffer (ofdmBuffer);
 	   if (++tii_counter >= tii_delay) {
-	      std::vector<int> secondaries;
-	      secondaries = my_TII_Detector. processNULL ();
-	      showSecondaries (-1);
-	      if (secondaries. size () > 0) {
-	         showCoordinates (secondaries. at (0));
-	         for (int i = 0; i < secondaries. size (); i ++)
-	            showSecondaries (secondaries. at (i));
-	      }
-              show_tii (1);
-	      tii_counter	= 0;
-	      my_TII_Detector. reset ();
+	      QByteArray secondaries =
+                                      my_TII_Detector. processNULL ();
+	      show_tii (secondaries);
+	      tii_counter = 0;
+	      my_TII_Detector. reset();
 	   }
-	   tiiBuffer -> putDataIntoBuffer (ofdmBuffer. data (), T_u);
+	   tiiBuffer -> putDataIntoBuffer (ofdmBuffer. data(), T_u);
 	}
 }
 
@@ -528,7 +544,6 @@ void	dabProcessor:: dump (std::complex<float> temp) {
         }
 }
 
-
 void	dabProcessor::startDumping (SNDFILE *f) {
         dumpfilePointer. store (f);
 }
@@ -537,3 +552,6 @@ void	dabProcessor::stopDumping (void) {
         dumpfilePointer. store (nullptr);
 }
 
+void	dabProcessor::set_scanMode	(bool b) {
+	(void)b;
+}

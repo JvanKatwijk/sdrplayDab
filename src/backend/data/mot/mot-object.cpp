@@ -44,7 +44,7 @@ int32_t pointer = 7;
 
 	headerSize     =
              ((segment [3] & 0x0F) << 9) |
-	               (segment [4] << 1) | ((segment [5] >> 7) && 0x01);
+                   (segment [4] << 1) | ((segment [5] >> 7) & 0x01);
 	bodySize       =
               (segment [0] << 20) | (segment [1] << 12) |
                             (segment [2] << 4 ) | ((segment [3] & 0xF0) >> 4);
@@ -52,7 +52,7 @@ int32_t pointer = 7;
 	contentsubType	= ((segment [5] & 0x01) << 8) | segment [6];
 
 //	we are actually only interested in the name, if any
-        while (pointer < headerSize) {
+        while ((uint16_t)pointer < headerSize) {
            uint8_t PLI	= (segment [pointer] & 0300) >> 6;
            uint8_t paramId = (segment [pointer] & 077);
            uint16_t     length;
@@ -89,10 +89,10 @@ int32_t pointer = 7;
 	}
 }
 
-	motObject::~motObject	(void) {
+	motObject::~motObject() {
 }
 
-uint16_t	motObject::get_transportId (void) {
+uint16_t	motObject::get_transportId() {
 	return transportId;
 }
 
@@ -107,10 +107,11 @@ void	motObject::addBodySegment (uint8_t	*bodySegment,
 	                           bool		lastFlag) {
 int32_t i;
 
+//	fprintf (stderr, "adding segment %d\n", segmentNumber);
 	if ((segmentNumber < 0) || (segmentNumber >= 8192))
 	   return;
 
-	if (motMap. find (segmentNumber) != motMap. end ())
+	if (motMap. find (segmentNumber) != motMap. end())
 	   return;
 
 //      Note that the last segment may have a different size
@@ -132,16 +133,16 @@ int32_t i;
 //	once we know how many segments there are/should be,
 //	we check for completeness
 	for (i = 0; i < numofSegments; i ++) {
-	   if (motMap. find (i) == motMap. end ())
+	   if (motMap. find (i) == motMap. end())
 	      return;
 	}
 
 //	The motObject is (seems to be) complete
-	handleComplete ();
+	handleComplete();
 }
 
 
-void	motObject::handleComplete (void) {
+void	motObject::handleComplete() {
 QByteArray result;
 
 	for (const auto &it : motMap)
@@ -149,8 +150,15 @@ QByteArray result;
 
 	if (contentType == 7) {		// epg data
 #ifdef	TRY_EPG
-	   std::vector<uint8_t> epgData (result. begin (), result. end ());
-	   epgHandler. decode (epgData, name);
+	   if (name == QString (""))
+	      name = "epg file";
+	   QString realName = picturePath;
+	   realName. append (name);
+	   realName  = QDir::toNativeSeparators (realName);
+	   checkDir (realName);
+	   std::vector<uint8_t> epgData (result. begin(), result. end());
+	   epgHandler. decode (epgData, realName);
+	   fprintf (stderr, "epg file %s\n", realName. toLatin1 (). data ());
 #endif
 	   return;
 	}
@@ -164,14 +172,14 @@ QByteArray result;
 	   realName. append (name);
 	   realName  = QDir::toNativeSeparators (realName);
 	   fprintf (stderr, "going to write file %s\n",
-	                         realName. toLatin1 (). data ());
+	                         realName. toUtf8(). data());
 	   checkDir (realName);
-	   FILE *x = fopen (realName. toLatin1 (). data (), "w+b");
+	   FILE *x = fopen (realName. toLatin1 (). data(), "w+b");
 	   if (x == nullptr)
 	      fprintf (stderr, "cannot write file %s\n",
-	                           realName. toLatin1 (). data ());
+	                           realName. toUtf8(). data());
 	   else {
-	      (void)fwrite (result. data (), 1, bodySize, x);
+	      (void)fwrite (result. data(), 1, bodySize, x);
 	      fclose (x);
 	   }
 	   return;
@@ -198,12 +206,12 @@ QString	dir;
 	for (i = 0; i < ind; i ++)
 	   dir. append (s [i]);
 
-	if (QDir (dir). exists ())
+	if (QDir (dir). exists())
 	   return;
-	QDir (). mkpath (dir);
+	QDir(). mkpath (dir);
 }
 
-int	motObject::get_headerSize	(void) {
+int	motObject::get_headerSize() {
 	return headerSize;
 }
 

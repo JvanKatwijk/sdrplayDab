@@ -4,9 +4,9 @@
  * Copyright 2002 Phil Karn, KA9Q
  * May be used under the terms of the GNU General Public License (GPL)
  */
-#include	<stdio.h>
+#include	<cstdio>
 #include	"reed-solomon.h"
-#include	<string.h>
+#include	<cstring>
 
 /*
  *	Reed-Solomon decoder
@@ -43,14 +43,14 @@ int i, j, root, iprim;
 	this	-> prim		= prim;
 	this	-> nroots	= nroots;
 	for (iprim = 1; (iprim % prim) != 0; iprim += codeLength);
-	this -> iprim = iprim / prim;
-	this	-> generator	= new uint8_t [nroots + 1];
-	memset (generator, 0, (nroots + 1) * sizeof (generator [0]));
+	this	-> iprim = iprim / prim;
+	this	-> generator. resize (nroots + 1);
+	memset (generator. data(), 0, (nroots + 1) * sizeof (uint8_t));
 	generator [0] = 1;
 
 	for (i = 0, root = fcr * prim; i < nroots; i++, root += 1) {
 	   generator [i + 1] = 1;
-	   for (j = i; j > 0; j--){
+	   for (j = i; j > 0; j--) {
 	      if (generator [j] != 0) {
 	         uint16_t p1 = myGalois. multiply_power (
 	                                   myGalois. poly2power (generator [j]),
@@ -75,8 +75,7 @@ int i, j, root, iprim;
 	   generator [i] = myGalois. poly2power (generator [i]);
 }
 
-	reedSolomon::~reedSolomon	(void) {
-	delete generator;
+	reedSolomon::~reedSolomon() {
 }
 
 //

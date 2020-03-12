@@ -28,9 +28,9 @@
 #include	<QMutex>
 #include	<QSemaphore>
 #include	<atomic>
-#include	<stdio.h>
-#include	<stdint.h>
-#include	<stdio.h>
+#include	<cstdio>
+#include	<cstdint>
+#include	<cstdio>
 #include	<vector>
 #include	"dab-constants.h"
 #include	"dab-params.h"
@@ -43,28 +43,30 @@ class	RadioInterface;
 class	Backend;
 
 class mscHandler: public QThread  {
+Q_OBJECT
 public:
 			mscHandler		(RadioInterface *,
 	                                         uint8_t,
-	                                         QString);
-			~mscHandler		(void);
+	                                         QString,
+	                                         RingBuffer<uint8_t> *);
+			~mscHandler();
 	void		processBlock_0		(std::complex<float> *);
 	void		process_Msc		(std::complex<float> *, int);
 	void		set_Channel		(descriptorType *,
 	                                           RingBuffer<int16_t> *,
 	                                           RingBuffer<uint8_t> *);
 //
-//	This function should be called beore issuing a request
+//	This function should be called before issuing a request
 //	to handle a service
-	void		reset			(void);
+	void		reset();
 //
 //	This function will kill
-	void		stop			(void);
+	void		stop();
 private:
 	void		process_mscBlock	(std::vector<int16_t>, int16_t);
-
 	RadioInterface	*myRadioInterface;
 	RingBuffer<uint8_t>	*dataBuffer;
+	RingBuffer<uint8_t>	*frameBuffer;
 	QString		picturesPath;
 	dabParams	params;
 	fftHandler      my_fftHandler;
@@ -82,12 +84,12 @@ private:
 	int16_t		BitsperBlock;
 	int16_t		numberofblocksperCIF;
 	int16_t		blockCount;
-	void            run             (void);
+	void            run();
         std::atomic<bool>       running;
-        std::vector<std::vector<std::complex<float>>> command;
+        std::vector<std::vector<std::complex<float> > > command;
         int16_t         amount;
         int16_t         currentBlock;
-        void            processBlock_0	(void);
+        void            processBlock_0();
         void            processMsc	(int32_t n);
         QSemaphore      bufferSpace;
         QWaitCondition  commandHandler;

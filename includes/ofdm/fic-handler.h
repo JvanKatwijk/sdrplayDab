@@ -26,13 +26,13 @@
 #ifndef	__FIC_HANDLER__
 #define	__FIC_HANDLER__
 
-#include	<stdio.h>
-#include	<stdint.h>
+#include	<cstdio>
+#include	<cstdint>
 #include	<vector>
-#include	"viterbi-handler.h"
+#include	"viterbi-spiral.h"
 #include	<QObject>
-#include	"fib-decoder.h"
 #include	"dab-params.h"
+#include	"fib-decoder.h"
 
 
 class	RadioInterface;
@@ -42,13 +42,14 @@ class ficHandler: public fibDecoder {
 Q_OBJECT
 public:
 		ficHandler		(RadioInterface *, uint8_t);
-		~ficHandler		(void);
+		~ficHandler();
 	void	process_ficBlock	(std::vector<int16_t>, int16_t);
-	void	stop			(void);
-	void	reset			(void);
+	void	stop			();
+	void	reset			();
+	
 private:
-	viterbiHandler	myViterbi;
 	dabParams	params;
+	viterbiSpiral	myViterbi;
 	uint8_t		bitBuffer_out	[768];
         int16_t		ofdm_input	[2304];
 	bool		punctureTable	[3072 + 24];

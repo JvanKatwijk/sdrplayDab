@@ -23,6 +23,9 @@
  *	may 15 2015. A real improvement on the code
  *	is the addition from Stefan Poeschel to create a
  *	header for the aac that matches, really a big help!!!!
+ *
+ *	(2019:)Furthermore, the code in the "build_aacFile" function is
+ *	his as well. Chapeau!
  ************************************************************************
  */
 #include	"mp4processor.h"
@@ -31,6 +34,7 @@
 #include	<cstring>
 #include	"charsets.h"
 #include	"pad-handler.h"
+#include	"bitWriter.h"
 
 //
 /**
@@ -39,14 +43,15 @@
   *	that are processed by the "faadDecoder" class
   */
 	mp4Processor::mp4Processor (RadioInterface	*mr,
-	                            int16_t	bitRate,
+	                            int16_t		bitRate,
 	                            RingBuffer<int16_t> *b,
+	                            RingBuffer<uint8_t> *frameBuffer,
 	                            QString	picturesPath)
-	                            :my_padhandler (mr, picturesPath),
- 	                             my_rsDecoder (8, 0435, 0, 1, 10),
-	                             aacDecoder (mr, b) {
+	                               :my_padhandler (mr, picturesPath),
+ 	                                my_rsDecoder (8, 0435, 0, 1, 10) {
 
 	myRadioInterface	= mr;
+	this	-> frameBuffer	= frameBuffer;
 	connect (this, SIGNAL (show_frameErrors (int)),
 	         mr, SLOT (show_frameErrors (int)));
 	connect (this, SIGNAL (show_rsErrors (int)),
@@ -55,6 +60,13 @@
 	         mr, SLOT (show_aacErrors (int)));
 	connect (this, SIGNAL (isStereo (bool)),
 	         mr, SLOT (setStereo (bool)));
+	connect (this, SIGNAL (newFrame (int)),
+	         mr, SLOT (newFrame (int)));
+#ifdef	__WITH_FDK_AAC__
+	aacDecoder		= new fdkAAC (mr, b);
+#else
+	aacDecoder		= new faadDecoder (mr, b);
+#endif
 	this	-> bitRate	= bitRate;	// input rate
 
 	superFramesize		= 110 * (bitRate / 8);
@@ -71,7 +83,8 @@
 	rsErrors	= 0;
 }
 
-	mp4Processor::~mp4Processor (void) {
+	mp4Processor::~mp4Processor() {
+	delete aacDecoder;
 }
 
 /**
@@ -116,7 +129,7 @@ int16_t	nbits	= 24 * bitRate;
   *	and adjust the buffer here for the next round
   */
 	   if (fc. check (&frameBytes [blockFillIndex * nbits / 8]) &&
-	       (processSuperframe (frameBytes. data (),
+	       (processSuperframe (frameBytes. data(),
 	                           blockFillIndex * nbits / 8))) {
 //	since we processed a full cycle of 5 blocks, we just start a
 //	new sequence, beginning with block blockFillIndex
@@ -148,12 +161,8 @@ uint8_t		num_aus;
 int16_t		i, j, k;
 uint8_t		rsIn	[120];
 uint8_t		rsOut	[110];
-uint8_t		dacRate;
-uint8_t		sbrFlag;
-uint8_t		aacChannelMode;
-uint8_t		psFlag;
-uint16_t	mpegSurround;
-int32_t		tmp;
+int		tmp;
+stream_parms    streamParameters;
 
 /**
   *	apply reed-solomon error repar
@@ -177,13 +186,25 @@ int32_t		tmp;
 
 //	bits 0 .. 15 is firecode
 //	bit 16 is unused
-	dacRate		= (outVector [2] >> 6) & 01;	// bit 17
-	sbrFlag		= (outVector [2] >> 5) & 01;	// bit 18
-	aacChannelMode	= (outVector [2] >> 4) & 01;	// bit 19
-	psFlag		= (outVector [2] >> 3) & 01;	// bit 20
-	mpegSurround	= (outVector [2] & 07);		// bits 21 .. 23
+	streamParameters. dacRate = (outVector [2] >> 6) & 01;	// bit 17
+	streamParameters. sbrFlag = (outVector [2] >> 5) & 01;	// bit 18
+	streamParameters. aacChannelMode
+	                          = (outVector [2] >> 4) & 01;	// bit 19
+	streamParameters. psFlag  = (outVector [2] >> 3) & 01;	// bit 20
+	streamParameters. mpegSurround	= (outVector [2] & 07);	// bits 21 .. 23
+//
+//	added for the aac file writer
+	streamParameters. CoreSrIndex	=
+	              streamParameters. dacRate ?
+	                            (streamParameters. sbrFlag ? 6 : 3) :
+	                            (streamParameters. sbrFlag ? 8 : 5);
+	streamParameters. CoreChConfig	=
+	              streamParameters. aacChannelMode ? 2 : 1;
 
-	switch (2 * dacRate + sbrFlag) {
+	streamParameters. ExtensionSrIndex =
+	              streamParameters. dacRate ? 3 : 5;
+
+	switch (2 * streamParameters. dacRate + streamParameters. sbrFlag) {
 	  default:		// cannot happen
 	   case 0:
 	      num_aus = 4;
@@ -248,8 +269,6 @@ int32_t		tmp;
 //	but first the crc check
 	   if (check_crc_bytes (&outVector [au_start [i]],
 	                                aac_frame_length)) {
-	      bool err;
-//
 //	first handle the pad data if any
 	      if (((outVector [au_start [i + 0]] >> 5) & 07) == 4) {
 	                                      
@@ -260,24 +279,37 @@ int32_t		tmp;
 	         uint8_t L1	= buffer [count - 2];
 	         my_padhandler. processPAD (buffer, count - 3, L1, L0);
 	      }
+
+	      std::vector<uint8_t> fileBuffer;
+	      int segmentSize =
+	              build_aacFile (aac_frame_length,
+	                             &streamParameters,
+	                             &(outVector. data () [au_start [i]]),
+	                             fileBuffer);
+	      frameBuffer -> putDataIntoBuffer (fileBuffer. data (),
+	                                        segmentSize);
+	      newFrame (segmentSize);
 //
 //	then handle the audio
-
+#ifdef	__WITH_FDK_AAC__
+	      tmp = aacDecoder -> MP42PCM (&streamParameters, 
+	                                   fileBuffer. data (), 
+	                                   segmentSize);
+#else
 	      uint8_t theAudioUnit [2 * 960 + 10];	// sure, large enough
 
 	      memcpy (theAudioUnit,
 	                 &outVector [au_start [i]], aac_frame_length);
 	      memset (&theAudioUnit [aac_frame_length], 0, 10);
 
-	      int tmp = aacDecoder. MP42PCM (dacRate,
-	                                     sbrFlag,
-	                                     mpegSurround,
-	                                     aacChannelMode,
-	                                     theAudioUnit,
-	                                     aac_frame_length);
-	      err	= tmp == 0;
-	      emit isStereo (!err);
-	      if (err) 
+	      tmp = aacDecoder -> MP42PCM (&streamParameters,
+	                                   theAudioUnit,
+	                                   aac_frame_length);
+#endif
+//	      emit isStereo (streamParameters. aacChannelMode);
+	      emit isStereo (tmp == 2);
+	
+	      if (tmp <= 0) 
 	         aacErrors ++;
 	      if (++aacFrames > 25) {
 	         show_aacErrors (aacErrors);
@@ -288,8 +320,59 @@ int32_t		tmp;
 	   else {
 	      fprintf (stderr, "CRC failure with dab+ frame %d (%d)\n",
 	                                          i, num_aus);
+//
+//	what would happen if the errors were in the 10 parity bytes
+//	rather than in the 110 payload bytes?
 	   }
 	}
 	return true;
 }
 
+int	mp4Processor::build_aacFile (int16_t aac_frame_len,
+	                             stream_parms *sp,
+	                             uint8_t *data,
+	                             std::vector<uint8_t> &fileBuffer) {
+BitWriter	au_bw;
+
+	au_bw. AddBits (0x2B7, 11);	// syncword
+	au_bw. AddBits (    0, 13);	// audioMuxLengthBytes - written later
+//	AudioMuxElement(1)
+
+	au_bw. AddBits (    0, 1);	// useSameStreamMux
+//	StreamMuxConfig()
+
+	au_bw. AddBits (    0, 1);	// audioMuxVersion
+	au_bw. AddBits (    1, 1);	// allStreamsSameTimeFraming
+	au_bw. AddBits (    0, 6);	// numSubFrames
+	au_bw. AddBits (    0, 4);	// numProgram
+	au_bw. AddBits (    0, 3);	// numLayer
+
+	if (sp  -> sbrFlag) {
+	   au_bw. AddBits (0b00101, 5); // SBR
+	   au_bw. AddBits (sp -> CoreSrIndex, 4); // samplingFrequencyIndex
+	   au_bw. AddBits (sp -> CoreChConfig, 4); // channelConfiguration
+	   au_bw. AddBits (sp -> ExtensionSrIndex, 4);	// extensionSamplingFrequencyIndex
+	   au_bw. AddBits (0b00010, 5);		// AAC LC
+	   au_bw. AddBits (0b100, 3);							// GASpecificConfig() with 960 transform
+	} else {
+	   au_bw. AddBits (0b00010, 5); // AAC LC
+	   au_bw. AddBits (sp -> CoreSrIndex, 4); // samplingFrequencyIndex
+	   au_bw. AddBits (sp -> CoreChConfig, 4); // channelConfiguration
+	   au_bw. AddBits (0b100, 3);							// GASpecificConfig() with 960 transform
+	}
+
+	au_bw. AddBits (0b000, 3);	// frameLengthType
+	au_bw. AddBits (0xFF, 8);	// latmBufferFullness
+	au_bw. AddBits (   0, 1);	// otherDataPresent
+	au_bw. AddBits (   0, 1);	// crcCheckPresent
+
+//	PayloadLengthInfo()
+	for (size_t i = 0; i < (size_t)(aac_frame_len / 255); i++)
+	   au_bw. AddBits (0xFF, 8);
+	au_bw. AddBits (aac_frame_len % 255, 8);
+
+	au_bw. AddBytes (data, aac_frame_len);
+	au_bw. WriteAudioMuxLengthBytes ();
+	fileBuffer	= au_bw. GetData ();
+	return fileBuffer. size ();
+}

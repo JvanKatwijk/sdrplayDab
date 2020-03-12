@@ -5,6 +5,7 @@
  *    Lazy Chair Computing
  *
  *    This file is part of the sdrplayDab program
+ *
  *    sdrplayDab is free software; you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation; either version 2 of the License, or
@@ -35,12 +36,13 @@ virtual			~deviceHandler 	(void);
 virtual		void	setOffset	(int);
 virtual		bool	restartReader	(int32_t);
 virtual		void	stopReader	(void);
+virtual		int32_t	getVFOFrequency	(void);
 virtual		void	resetBuffer	(void);
 virtual		int16_t	bitDepth	(void) { return 10;}
 virtual		void	setEnv		(dabProcessor *);
 virtual		void	show		(void) {}
 virtual		void	hide		(void) {}
-virtual		bool	isVisible	(void) {return true;}
+virtual		bool	isHidden	(void) {return false;}
 virtual		bool	isSDRPLAY_2	(void) {return false;}
 protected:
 	dabProcessor	*base;

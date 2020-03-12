@@ -45,15 +45,15 @@
 
 		ficHandler::ficHandler (RadioInterface *mr,
 	                                uint8_t dabMode):
-	                                    params (dabMode),
 	                                    fibDecoder (mr),
+	                                    params (dabMode),
 	                                    myViterbi (768, true) {
 int16_t	i, j, k;
 int	local	= 0;
 int16_t	shiftRegister [9] = {1, 1, 1, 1, 1, 1, 1, 1, 1};
 
 	index		= 0;
-	BitsperBlock	= 2 * params. get_carriers ();
+	BitsperBlock	= 2 * params. get_carriers();
 	ficno		= 0;
 	ficBlocks	= 0;
 	ficMissed	= 0;
@@ -107,7 +107,7 @@ int16_t	shiftRegister [9] = {1, 1, 1, 1, 1, 1, 1, 1, 1};
 	         mr, SLOT (show_ficSuccess (bool)));
 }
 
-		ficHandler::~ficHandler (void) {
+		ficHandler::~ficHandler() {
 }
 
 	
@@ -204,10 +204,10 @@ int16_t	inputCount	= 0;
 	}
 }
 
-void	ficHandler::stop (void) {
+void	ficHandler::stop	() {
 }
 
-void	ficHandler::reset	(void) {
+void	ficHandler::reset	() {
 	clearEnsemble ();
 }
 

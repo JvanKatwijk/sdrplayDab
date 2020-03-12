@@ -36,14 +36,13 @@ class	dabProcessor;
 class	wavFiles: public deviceHandler,
 	          public Ui_filereaderWidget, QThread {
 public:
-			wavFiles	(QString);
+			wavFiles	(QString, dabProcessor *);
 	       		~wavFiles	(void);
 	bool		restartReader	(int);
 	void		stopReader	(void);
-	void		setEnv		(dabProcessor *);
 	void		show		(void);
 	void		hide		(void);
-	bool		isVisible       (void);
+	bool		isHidden	(void);
 private:
 	QString		fileName;
 	int		tester;

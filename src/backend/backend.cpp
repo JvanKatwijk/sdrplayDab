@@ -1,6 +1,6 @@
 #
 /*
- *    Copyright (C) 2014 .. 2017
+ *    Copyright (C) 2014 .. 2019
  *    Jan van Katwijk (J.vanKatwijk@gmail.com)
  *    Lazy Chair Computing
  *
@@ -32,28 +32,35 @@
 	Backend::Backend	(RadioInterface *mr,
 	                         descriptorType	*d,
 	                         RingBuffer<int16_t> *audiobuffer,
-	                         RingBuffer<uint8_t> *databuffer,
+	                         RingBuffer<uint8_t> *databuffer,	
+	                         RingBuffer<uint8_t> *frameBuffer,
 	                         QString	picturesPath):
 	                                    outV (d -> bitRate * 24),
 	                                    driver (mr, 
 	                                            d,
 	                                            audiobuffer,
 	                                            databuffer,
+	                                            frameBuffer,
 	                                            picturesPath),
 	                                    deconvolver (d)
 #ifdef	__THREADED_BACKEND
-	                             ,freeSlots (20) 
+	                                    ,freeSlots (NUMBER_SLOTS) 
 #endif 
 	                                          {
 int32_t i, j;
+	this	-> radioInterface	= mr;
 	this	-> startAddr		= d -> startAddr;
 	this	-> Length		= d -> length;
         this    -> fragmentSize         = d -> length * CUSize;
 	this	-> bitRate		= d -> bitRate;
+	this	-> serviceId		= d -> SId;
+	this	-> serviceName		= d -> serviceName;
+	this	-> shortForm		= d -> shortForm;
+	this	-> protLevel		= d -> protLevel;
 	interleaveData. resize (16);
 	for (i = 0; i < 16; i ++) {
 	   interleaveData [i]. resize (fragmentSize);
-	   memset (interleaveData [i]. data (), 0,
+	   memset (interleaveData [i]. data(), 0,
 	                               fragmentSize * sizeof (int16_t));
 	}
 
@@ -76,17 +83,17 @@ int32_t i, j;
 //	for local buffering the input, we have
 	nextIn				= 0;
 	nextOut				= 0;
-	for (i = 0; i < 20; i ++)
+	for (i = 0; i < NUMBER_SLOTS; i ++)
 	   theData [i]. resize (fragmentSize);
 	running. store (true);
-	start ();
+	start();
 #endif
 }
 
-	Backend::~Backend (void) {
+	Backend::~Backend() {
 #ifdef	__THREADED_BACKEND
 	running. store (false);
-	while (this -> isRunning ())
+	while (this -> isRunning())
 	   usleep (1000);
 #endif
 }
@@ -97,9 +104,9 @@ int32_t	Backend::process	(int16_t *v, int16_t cnt) {
 	while (!freeSlots. tryAcquire (1, 200))
 	   if (!running)
 	      return 0;
-	memcpy (theData [nextIn]. data (), v, fragmentSize * sizeof (int16_t));
-	nextIn = (nextIn + 1) % 20;
-	usedSlots. release ();
+	memcpy (theData [nextIn]. data(), v, fragmentSize * sizeof (int16_t));
+	nextIn = (nextIn + 1) % NUMBER_SLOTS;
+	usedSlots. release (1);
 #else
 	processSegment (v);
 #endif
@@ -118,8 +125,8 @@ int16_t	i;
 
 	interleaverIndex = (interleaverIndex + 1) & 0x0F;
 #ifdef	__THREADED_BACKEND
-	nextOut = (nextOut + 1) % 20;
-	freeSlots. release ();
+	nextOut = (nextOut + 1) % NUMBER_SLOTS;
+	freeSlots. release (1);
 #endif
 
 //	only continue when de-interleaver is filled
@@ -128,7 +135,7 @@ int16_t	i;
 	   return;
 	}
 
-	deconvolver. deconvolve (tempX. data (), fragmentSize, outV. data ());
+	deconvolver. deconvolve (tempX. data(), fragmentSize, outV. data());
 //	and the energy dispersal
 	for (i = 0; i < bitRate * 24; i ++)
 	   outV [i] ^= disperseVector [i];
@@ -137,24 +144,26 @@ int16_t	i;
 }
 
 #ifdef	__THREADED_BACKEND
-void	Backend::run	(void) {
+void	Backend::run() {
 
-	while (running. load ()) {
+	while (running. load()) {
 	   while (!usedSlots. tryAcquire (1, 200)) 
 	      if (!running)
 	         return;
-	   processSegment (theData [nextOut]. data ());
+	   processSegment (theData [nextOut]. data());
 	}
 }
 #endif
 
 //	It might take a msec for the task to stop
-void	Backend::stopRunning (void) {
+void	Backend::stopRunning() {
 #ifdef	__THREADED_BACKEND
 	running = false;
-	while (this -> isRunning ())
+	while (this -> isRunning())
 	   usleep (1);
-//	myAudioSink	-> stop ();
+//	myAudioSink	-> stop();
 #endif
 }
+
+
 

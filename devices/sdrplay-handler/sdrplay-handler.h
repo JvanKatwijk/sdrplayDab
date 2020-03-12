@@ -5,6 +5,7 @@
  *    Lazy Chair Computing
  *
  *    This file is part of the sdrplayDab program
+ *
  *    sdrplayDab is free software; you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation; either version 2 of the License, or
@@ -55,17 +56,17 @@ class	sdrplayHandler: public deviceHandler, public Ui_sdrplayWidget {
 Q_OBJECT
 public:
 			sdrplayHandler		(RadioInterface *,
-	                                         QSettings *);
+	                                         QSettings *, dabProcessor *);
 			~sdrplayHandler		(void);
 	void		setOffset		(int);
 	bool		restartReader		(int32_t);
 	void		stopReader		(void);
+	int32_t		getVFOFrequency		(void);
 	void		resetBuffer		(void);
 	int16_t		bitDepth		(void);
 	void		show			(void);
 	void		hide			(void);
-	bool		isVisible		(void);
-	void		setEnv			(dabProcessor *);
+	bool		isHidden		(void);
 	bool		isSDRPLAY_2		(void);
 	void		antennaSwitcher		(bool);
 //
@@ -73,7 +74,8 @@ public:
 	RingBuffer<std::complex<float>>	*_I_Buffer;
 	float		denominator;
 	dabProcessor	*base;
-
+	void		set_initialGain	(float);
+	void		setGains	(float, float);
 	QString		errorCodes	(mir_sdr_ErrT);
 	int		lnaState;
 	int16_t		hwVersion;
@@ -92,6 +94,7 @@ private:
 private slots:
 	void		set_lnagainReduction	(int);
 	void		set_debugControl	(int);
+	void		set_agcControl		(int);
 	void		set_ppmControl		(int);
 	void		set_antennaSelect	(const QString &);
 	void		set_tunerSelect		(const QString &);

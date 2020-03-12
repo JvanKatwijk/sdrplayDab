@@ -5,6 +5,7 @@
  *    Lazy Chair Computing
  *
  *    This file is part of the Qt-DAB.
+ *
  *    Qt-DAB is free software; you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation; either version 2 of the License, or
@@ -21,16 +22,17 @@
  */
 
 //
-//	Simple viewer for impulse responses
+//	Simple viewer for correlation
 //
-#ifndef		__IMPULSE_VIEWER__
-#define		__IMPULSE_VIEWER__
+#ifndef		__CORRELATION_VIEWER__
+#define		__CORRELATION_VIEWER__
 
 #include        "dab-constants.h"
 #include	<QFrame>
+#include	<QSettings>
 #include	"ringbuffer.h"
 #include	<QObject>
-#include	"ui_impulse-widget.h"
+#include	"ui_correlation-widget.h"
 #include	<qwt.h>
 #include	<qwt_plot.h>
 #include	<qwt_plot_marker.h>
@@ -39,21 +41,22 @@
 #include	<qwt_plot_marker.h>
 
 class	RadioInterface;
-class	impulseViewer: public QObject, Ui_impulseWidget {
+class	correlationViewer: public QObject, Ui_correlationWidget {
 Q_OBJECT
 public:
-			impulseViewer		(RadioInterface *,
+			correlationViewer	(RadioInterface *,
+	                                         QSettings	*,
 	                                         RingBuffer<float> *);
-			~impulseViewer		(void);
-	void		showImpulse		(int32_t);
+			~correlationViewer	();
+	void		showCorrelation		(int32_t, int32_t);
 	void		showIndex		(int32_t);
-	void		show			(void);
-	void		hide			(void);
-	bool		isHidden		(void);
+	void		show			();
+	void		hide			();
+	bool		isHidden		();
 
 private:
 	std::vector<int> indexVector;
-	float		get_db (float);
+	float		get_db			(float);
 	RadioInterface	*myRadioInterface;
 	RingBuffer<float> *responseBuffer;
 	int16_t		displaySize;
@@ -62,6 +65,7 @@ private:
 	QwtPlotGrid	*grid;
 	QwtPlotCurve	*spectrumCurve;
 	QBrush		*ourBrush;
+	int		plotLength;
 };
 
 #endif

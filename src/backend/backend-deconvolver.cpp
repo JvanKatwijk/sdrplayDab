@@ -1,6 +1,6 @@
 #
 /*
- *    Copyright (C) 2014 .. 2017
+ *    Copyright (C) 2014 .. 2019
  *    Jan van Katwijk (J.vanKatwijk@gmail.com)
  *    Lazy Chair Computing
  *
@@ -33,13 +33,13 @@
                                                       d -> protLevel);
 }
 
-	backendDeconvolver::~backendDeconvolver	(void) {
+	backendDeconvolver::~backendDeconvolver() {
 	delete protectionHandler;
 }
 
 void	backendDeconvolver::deconvolve	(int16_t	*rawBits_in,
-	                         int32_t	length,
-	                         uint8_t	*outData) {
+	                                 int32_t	length,
+	                                 uint8_t	*outData) {
 	   protectionHandler -> deconvolve (rawBits_in,
 	                                    length,
 	                                    outData);

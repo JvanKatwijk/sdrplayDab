@@ -4,19 +4,20 @@
  *    Jan van Katwijk (J.vanKatwijk@gmail.com)
  *    Lazy Chair Computing
  *
- *    This file is part of the Qt-DAB program
- *    Qt-DAB is free software; you can redistribute it and/or modify
+ *    This file is part of the sdrplayDab program
+ *
+ *    sdrplayDab is free software; you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation; either version 2 of the License, or
  *    (at your option) any later version.
  *
- *    Qt-DAB is distributed in the hope that it will be useful,
+ *    sdrplayDab is distributed in the hope that it will be useful,
  *    but WITHOUT ANY WARRANTY; without even the implied warranty of
  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *    GNU General Public License for more details.
  *
  *    You should have received a copy of the GNU General Public License
- *    along with Qt-DAB; if not, write to the Free Software
+ *    along with sdrplayDab; if not, write to the Free Software
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 #include	<stdio.h>
@@ -39,10 +40,11 @@ struct timeval	tv;
 
 #define	__BUFFERSIZE	8 * 32768
 
-	wavFiles::wavFiles (QString f) {
+	wavFiles::wavFiles (QString f, dabProcessor *base) {
 SF_INFO *sf_info;
 
 	fileName	= f;
+	this	-> base	= base;
 	myFrame		= new QFrame;
 	setupUi (myFrame);
 
@@ -58,6 +60,7 @@ SF_INFO *sf_info;
 	   delete myFrame;
 	   throw (24);
 	}
+
 	if ((sf_info -> samplerate != 2048000) ||
 	    (sf_info -> channels != 2)) {
 	   fprintf (stderr, "This is not a recorded dab file, sorry\n");
@@ -69,7 +72,6 @@ SF_INFO *sf_info;
 	readerOK	= true;
 	readerPausing	= true;
 	currPos		= 0;
-//	start	();
 }
 
 	wavFiles::~wavFiles (void) {
@@ -111,8 +113,9 @@ int	teller		= 0;
 	fileProgress	-> setValue (0);
 	currentTime	-> display (0);
 	fileLength	= sf_seek (filePointer, 0, SEEK_END);
+	sf_seek (filePointer, 0, SEEK_SET);
 	totalTime	-> display ((float)fileLength / 2048000);
-
+	fprintf (stderr, "fileLength = %d\n", (int)fileLength);
 	ExitCondition = false;
 
 	period		= (32768 * 1000) / 2048;	// full IQś read
@@ -173,10 +176,6 @@ float	temp [2 * length];
 	return	n & ~01;
 }
 
-void	wavFiles::setEnv	(dabProcessor *p) {
-	base	= p;
-}
-
 void	wavFiles::show		(void) {
 	myFrame		-> show ();
 }
@@ -185,7 +184,7 @@ void	wavFiles::hide		(void) {
 	myFrame		-> hide ();
 }
 
-bool	wavFiles::isVisible	(void) {
-	return myFrame	-> isVisible ();
+bool	wavFiles::isHidden	(void) {
+	return !myFrame	-> isVisible ();
 }
 

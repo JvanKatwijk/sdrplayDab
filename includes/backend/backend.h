@@ -30,10 +30,11 @@
 #include	<atomic>
 #endif
 #include	"ringbuffer.h"
-#include	<stdio.h>
+#include	<cstdio>
 #include        "backend-driver.h"
 #include        "backend-deconvolver.h"
 
+#define	NUMBER_SLOTS	25
 class	RadioInterface;
 
 #ifdef	__THREADED_BACKEND
@@ -42,37 +43,44 @@ class	Backend:public QThread {
 class	Backend {
 #endif
 public:
-	Backend	(RadioInterface	*mr,
-	         descriptorType	*d,
-	         RingBuffer<int16_t> *,
-	         RingBuffer<uint8_t> *,
-	         QString	picturesPath);
-	~Backend	(void);
-int32_t	process		(int16_t *, int16_t);
-void	stopRunning	(void);
+		Backend	(RadioInterface	*mr,
+	                 descriptorType	*d,
+	                 RingBuffer<int16_t> *,
+	                 RingBuffer<uint8_t> *,
+	                 RingBuffer<uint8_t> *,
+	                 QString	picturesPath);
+		~Backend();
+	int32_t	process		(int16_t *, int16_t);
+	void	stopRunning();
+//
+//	we need sometimes to access the key parameters for decoding
 	int		startAddr;
 	int		Length;
+	bool		shortForm;
+	int		protLevel;
+	int16_t		bitRate;
+	QString		serviceName;
 private:
 #ifdef	__THREADED_BACKEND
-void	run		(void);
+void	run();
 	atomic<bool>	running;
 	QSemaphore	freeSlots;
 	QSemaphore	usedSlots;
-	std::vector<int16_t>	theData [20];
+	std::vector<int16_t>	theData [NUMBER_SLOTS];
 	int16_t		nextIn;
 	int16_t		nextOut;
 #endif
-void	processSegment	(int16_t *Data);
+	void		processSegment	(int16_t *Data);
+	RadioInterface	*radioInterface;
 
-	int16_t		bitRate;
 	int16_t		fragmentSize;
+	int		serviceId;
 	std::vector<uint8_t> outV;
 	std::vector<std::vector <int16_t>> interleaveData;
 	std::vector<int16_t> tempX;
 	int16_t		countforInterleaver;
 	int16_t		interleaverIndex;
 	std::vector<uint8_t> disperseVector;
-
 	backendDriver		driver;
 	backendDeconvolver	deconvolver;
 };

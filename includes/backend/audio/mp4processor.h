@@ -28,16 +28,21 @@
  */
 //
 #include	"dab-constants.h"
-#include	<stdio.h>
-#include	<stdint.h>
+#include	<cstdio>
+#include	<cstdint>
 #include	<vector>
 #include	"audio-base.h"
 #include	"frame-processor.h"
-#include	"faad-decoder.h"
 #include	"firecode-checker.h"
 #include	"reed-solomon.h"
 #include	<QObject>
 #include	"pad-handler.h"
+
+#ifdef	__WITH_FDK_AAC__
+#include	"fdk-aac.h"
+#else
+#include	"faad-decoder.h"
+#endif
 
 class	RadioInterface;
 
@@ -47,43 +52,51 @@ public:
 			mp4Processor	(RadioInterface *,
 	                                 int16_t,
 	                                 RingBuffer<int16_t> *,
+	                                 RingBuffer<uint8_t> *,
 	                                 QString);
-			~mp4Processor	(void);
+			~mp4Processor();
 	void		addtoFrame	(std::vector<uint8_t>);
 private:
 	RadioInterface	*myRadioInterface;
 	padHandler	my_padhandler;
 	bool		processSuperframe (uint8_t [], int16_t);
+	int		build_aacFile (int16_t aac_frame_len,
+                                     stream_parms *sp,
+                                     uint8_t	*data,
+                                     std::vector<uint8_t> &fileBuffer);
+
+
 	int16_t		superFramesize;
 	int16_t		blockFillIndex;
 	int16_t		blocksInBuffer;
-	int16_t		blockCount;
+	int16_t         frameCount;
+        int16_t         frameErrors;
+        int16_t         rsErrors;
+        int16_t         aacErrors;
+        int16_t         aacFrames;
+        int16_t         successFrames;
+        int16_t         charSet;
+
 	int16_t		bitRate;
+	RingBuffer<uint8_t>	*frameBuffer;
 	std::vector<uint8_t> frameBytes;
 	std::vector<uint8_t> outVector;
 	int16_t		RSDims;
 	int16_t		au_start	[10];
-	int32_t		baudRate;
-
-	int32_t		au_count;
-	int16_t		au_errors;
-	int16_t		errorRate;
 	firecode_checker	fc;
 	reedSolomon	my_rsDecoder;
 //	and for the aac decoder
-	faadDecoder	aacDecoder;
-	int16_t		frameCount;
-	int16_t		successFrames;
-	int16_t		frameErrors;
-	int16_t		rsErrors;
-	int16_t		aacErrors;
-	int16_t		aacFrames;
-	int16_t		charSet;
+#ifdef	__WITH_FDK_AAC__
+	fdkAAC		*aacDecoder;
+#else
+	faadDecoder	*aacDecoder;
+#endif
 signals:
 	void		show_frameErrors		(int);
 	void		show_rsErrors			(int);
 	void		show_aacErrors			(int);
 	void		isStereo			(bool);
+	void		newFrame			(int);
 };
 
 #endif

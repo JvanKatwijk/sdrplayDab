@@ -26,17 +26,17 @@
 #ifndef	__DAB_CONSTANTS__
 #define	__DAB_CONSTANTS__
 #include	<QString>
-#include	<math.h>
-#include	<stdint.h>
-#include	<stdlib.h>
-#include	<stdio.h>
+#include	<cmath>
+#include	<cstdint>
+#include	<cstdlib>
+#include	<cstdio>
 #include	<complex>
 #include	<limits>
 #include	<cstring>
 #include	<unistd.h>
 
 #ifndef	__FREEBSD__
-#include	<malloc.h>
+//#include	<malloc.h>
 #endif
 
 #ifdef	__MINGW32__
@@ -44,7 +44,7 @@
 #include	"windows.h"
 #else
 #ifndef	__FREEBSD__
-#include	"alloca.h"
+//#include	"alloca.h"
 #endif
 #include	"dlfcn.h"
 typedef	void	*HINSTANCE;
@@ -64,7 +64,7 @@ using namespace std;
 #define	MHz(x)		(KHz (x) * 1000)
 #define	mHz(x)		(kHz (x) * 1000)
 
-#define	CURRENT_VERSION	"2.1"
+#define	CURRENT_VERSION	"3.3"
 
 #define		DAB		0100
 #define		DAB_PLUS	0101
@@ -75,12 +75,9 @@ using namespace std;
 
 #define		INPUT_RATE	2048000
 #define		BANDWIDTH	1536000
-
-#define		SYNCED		01
-#define		UNSYNCED	04
 //
 //	40 up shows good results
-#define		DIFF_LENGTH	80
+#define		DIFF_LENGTH	40
 static inline
 bool	isIndeterminate (float x) {
 	return x != x;
@@ -88,7 +85,7 @@ bool	isIndeterminate (float x) {
 
 static inline
 bool	isInfinite (float x) {
-	return x == numeric_limits<float>::infinity ();
+	return x == numeric_limits<float>::infinity();
 }
 
 static inline
@@ -101,10 +98,10 @@ std::complex<float> cdiv (std::complex<float> x, float y) {
 	return std::complex<float> (real (x) / y, imag (x) / y);
 }
 
-//static inline
-//float	get_db (float x) {
-//	return 20 * log10 ((x + 0.005) / (float)(256));
-//}
+static inline
+float	get_db (float x) {
+	return 20 * log10 ((x + 0.005) / (float)(256));
+}
 //
 
 #define	MINIMUM(x, y)	((x) < (y) ? x : y)
@@ -121,26 +118,28 @@ float	im	= imag (z);
 
 #define		BAND_III	0100
 #define		L_BAND		0101
-
+#define		A_BAND		0102
 
 class	descriptorType {
 public:
 	uint8_t	type;
 	bool	defined;
 	QString	serviceName;
-	int32_t	serviceId;
+	int32_t	SId;
+	int	SCIds;
 	int16_t subchId;
 	int16_t	startAddr;
 	bool	shortForm;
 	int16_t	protLevel;
 	int16_t	length;
 	int16_t	bitRate;
+	QString	channel;	// just for presets
 public:
-		descriptorType	(void) {
+		descriptorType() {
 	defined		= false;
 	serviceName	= "";
 	}
-virtual		~descriptorType	(void) {}
+virtual		~descriptorType() {}
 };
 
 //	for service handling we define
@@ -152,7 +151,7 @@ public:
 	int16_t	appType;
 	int16_t	compnr;
 	int16_t	packetAddress;
-	packetdata (void) {
+	packetdata() {
 	   type	= PACKET_SERVICE;
 	}
 };
@@ -164,10 +163,11 @@ public:
 	int16_t	programType;
 	int16_t	compnr;
 	int32_t	fmFrequency;
-	audiodata (void) {
+	audiodata() {
 	   type	= AUDIO_SERVICE;
 	}
 };
+
 
 //	just some locals
 //

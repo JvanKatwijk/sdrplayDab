@@ -1,3 +1,4 @@
+
 #
 /*
  *    Copyright (C) 2014 .. 2017
@@ -21,8 +22,8 @@
  */
 
 #include	"tii_detector.h"
-#include	<stdio.h>
-#include	<inttypes.h>
+#include	<cstdio>
+#include	<cinttypes>
 //
 
 static
@@ -109,16 +110,13 @@ uint8_t table [] = {
 		TII_Detector::TII_Detector (uint8_t dabMode, int16_t depth):
 	                                    params (dabMode),
 	                                    my_fftHandler (dabMode) {
-int16_t	p, c, k;
 int16_t	i;
-float	Phi_k;
 
 	this	-> depth	= depth;
-	this	-> T_u		= params. get_T_u ();
-	carriers		= params. get_carriers ();
+	this	-> T_u		= params. get_T_u();
+	carriers		= params. get_carriers();
 	theBuffer. resize	(T_u);
-	fillCount		= 0;
-	fft_buffer		= my_fftHandler. getVector ();	
+	fft_buffer		= my_fftHandler. getVector();	
 	window. resize 		(T_u);
 	for (i = 0; i < T_u; i ++)
 	   window [i]  = (0.42 -
@@ -131,12 +129,13 @@ float	Phi_k;
 	    invTable [table [i]] = i;
 }
 
-		TII_Detector::~TII_Detector (void) {
+		TII_Detector::~TII_Detector() {
 }
 
 
-void	TII_Detector::reset (void) {
-	memset (theBuffer. data (), 0, T_u * sizeof (std::complex<float>));
+void	TII_Detector::reset() {
+	for (int i = 0; i < T_u; i ++)
+	   theBuffer [i] = std::complex<float> (0, 0);
 }
 
 //	To eliminate (reduce?) noise in the input signal, we might
@@ -146,7 +145,7 @@ int	i;
 
 	for (i = 0; i < T_u; i ++)
 	   fft_buffer [i] = cmul (v [i], window [i]);
-	my_fftHandler. do_FFT ();
+	my_fftHandler. do_FFT();
 
 	for (i = 0; i < T_u; i ++)
 	    theBuffer [i] = cmul (theBuffer [i], 0.9) +
@@ -180,23 +179,22 @@ uint8_t bits [] = {0x80, 0x40, 0x20, 0x10 , 0x08, 0x04, 0x02, 0x01};
 
 #define	NUM_GROUPS	8
 #define	GROUPSIZE	24
-std::vector<int>	TII_Detector::processNULL (void) {
+QByteArray	TII_Detector::processNULL() {
 int i, j;
 float	hulpTable	[NUM_GROUPS * GROUPSIZE];
 float	C_table		[GROUPSIZE];	// contains the values
 int	D_table		[GROUPSIZE];	// count of indices in C_table with data
 float	avgTable	[NUM_GROUPS];
 float	minTable	[NUM_GROUPS];
-std::vector<int> results;
+QByteArray results;
 
-	results. resize (0);
 //	we map the "carriers" carriers (complex values) onto
 //	a collapsed vector of "carriers / 8" length, 
 //	considered to consist of 8 segments of 24 values
 //	Each "value" is the sum of 4 pairs of subsequent carriers,
 //	taken from the 4 quadrants -768 .. 385, 384 .. -1, 1 .. 384, 385 .. 768
 
-	collapse (theBuffer. data (), hulpTable);
+	collapse (theBuffer. data(), hulpTable);
 //
 //	since the "energy levels" in the different GROUPSIZE'd values
 //	may differ, we compute an average for each of the
@@ -294,7 +292,8 @@ std::vector<int> results;
 	         pattern [j] |= bits [ind];
 	      }
 	   }
-	   results. push_back ((invTable [pattern [j]] << 8) | maxIndex [j]);
+	   results. append (invTable [pattern [j]]);
+	   results. append (maxIndex [j]);
 	}
 	return results;
 }

@@ -27,17 +27,21 @@
 //	The output can be viewed (a.o) in LibreOfficeCalc
 #include	<QString>
 #include	"dab-constants.h"
-#include	<stdint.h>
-#include	<stdio.h>
+#include	<cstdint>
+#include	<cstdio>
 
 class	dabProcessor;
 
 class	ensemblePrinter {
 public:
-		ensemblePrinter		(void);
-		~ensemblePrinter	(void);
-	void	showEnsembleData	(QString, int32_t, QStringList,
-	                                 dabProcessor *, FILE *);
+		ensemblePrinter();
+		~ensemblePrinter();
+	void	showEnsembleData	(QString,
+	                                 int32_t,
+	                                 QString,	// time
+	                                 QStringList,
+	                                 dabProcessor *,
+	                                 FILE *);
 private:
 	QString	code_to_string		(uint8_t, uint8_t);
 };

@@ -5,6 +5,7 @@
  *    Lazy Chair Computing
  *
  *    This file is part of sdrplayDab program
+ *
  *    srplayDab is free software; you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation version 2 of the License.
@@ -57,15 +58,16 @@ int	get_lnaGRdB (int hwVersion, int lnaState) {
 //
 //	here we start
 	sdrplayHandler::sdrplayHandler  (RadioInterface *mr,
-	                                 QSettings *s) {
+	                                 QSettings *s, dabProcessor *base) {
 mir_sdr_ErrT	err;
 float	ver;
 mir_sdr_DeviceT devDesc [4];
 mir_sdr_GainValuesT gainDesc;
 sdrplaySelect	*sdrplaySelector;
 
-	sdrplaySettings			= s;
-	this	-> myFrame		= new QFrame (NULL);
+	sdrplaySettings		= s;
+	this	-> base		= base;
+	this	-> myFrame	= new QFrame (NULL);
 	setupUi (this -> myFrame);
 	this	-> myFrame	-> show ();
 	antennaSelector		-> hide ();
@@ -108,6 +110,8 @@ sdrplaySelect	*sdrplaySelector;
 	            sdrplaySettings -> value ("sdrplay-debug", 0). toInt ();
 	if (!debugFlag)
 	   debugControl -> hide ();
+	bool	agcFlag		=
+	            sdrplaySettings -> value ("agc", 1). toInt ();
 	sdrplaySettings	-> endGroup ();
 
 	err = mir_sdr_GetDevices (devDesc, &numofDevs, uint32_t (4));
@@ -201,6 +205,8 @@ sdrplaySelect	*sdrplaySelector;
 	      break;
 	}
 
+	if (agcFlag)
+	   agcControl	-> setChecked (true);
 //	and be prepared for future changes in the settings
 	connect (lnaGainSetting, SIGNAL (valueChanged (int)),
 	         this, SLOT (set_lnagainReduction (int)));
@@ -208,6 +214,8 @@ sdrplaySelect	*sdrplaySelector;
 	         this, SLOT (set_debugControl (int)));
 	connect (ppmControl, SIGNAL (valueChanged (int)),
 	         this, SLOT (set_ppmControl (int)));
+	connect (agcControl, SIGNAL (stateChanged (int)),
+	         this, SLOT (set_agcControl (int)));
 
 	lnaGRdBDisplay		-> display (get_lnaGRdB (hwVersion,
 	                                         lnaGainSetting -> value ()));
@@ -223,6 +231,8 @@ sdrplaySelect	*sdrplaySelector;
 	                                    gain_setpoint -> value ());
 	sdrplaySettings -> setValue ("sdrplay-lnastate",
 	                                    lnaGainSetting -> value ());
+	sdrplaySettings -> setValue ("agc",
+	                              agcControl -> isChecked () ? 1 : 0);
 	sdrplaySettings	-> endGroup ();
 	sdrplaySettings	-> sync ();
 	delete	myFrame;
@@ -248,6 +258,78 @@ mir_sdr_ErrT err;
 	}
 	freq_offsetDisplay	-> display (totalOffset);
 	freq_errorDisplay	-> display (offset);
+}
+
+void	sdrplayHandler::setGains	(float lowVal, float highVal) {
+mir_sdr_GainValuesT gains;
+mir_sdr_ErrT err = mir_sdr_GetCurrentGain (&gains);
+
+	if (err != mir_sdr_Success)
+	   fprintf (stderr, "error getting gain values %s\n",
+	                     errorCodes (err). toLatin1 (). data ());
+	
+	float str = 10 * log10 ((highVal + 0.005)  / denominator);
+	float lvv = 10 * log10 ((lowVal  + 0.005)  / denominator);
+//
+//	we compute the "error" in the gain setting,
+//	and we derive the GRdB value needed to correct that
+	int gainCorr	= gain_setpoint -> value () - str;
+
+	if (gainCorr < - 20)
+	   gainCorr = -20;
+	if (gainCorr > 20)
+	   gainCorr = 20;
+	int GRdB	= gains. curr - get_lnaGRdB (hwVersion, lnaState);
+	if (GRdB + gainCorr < 20)
+	   GRdB = 20;
+	else
+	if (GRdB + gainCorr > 59)
+	   GRdB = 59;
+	else
+	   GRdB = GRdB + gainCorr;
+
+	if ((GRdB != 0) && (!agcControl -> isChecked ())) {
+	   err = mir_sdr_RSP_SetGr (GRdB, lnaState, 1 , 0);
+	   if (err != mir_sdr_Success)
+	      fprintf (stderr, "error updating GainReduction: GRdb = %d, lnaState = %d, curr = %f %d (%s)\n",
+	                       GRdB,
+	                       lnaState,
+	                       gains. curr,
+	                       gainCorr,
+	                       errorCodes (err). toLatin1 (). data ());
+	}
+	averageValue		-> display (str);
+	nullValue		-> display (lvv);
+	reportedGain		-> display (gains. curr);
+}
+
+void	sdrplayHandler::set_initialGain (float initial_str) {
+mir_sdr_GainValuesT gains;
+mir_sdr_ErrT err = mir_sdr_GetCurrentGain (&gains);
+
+	if (err != mir_sdr_Success)
+	   fprintf (stderr, "error getting gain values %s\n",
+	                           errorCodes (err). toLatin1 (). data ());
+	int gainCorr = gain_setpoint -> value () - initial_str; 
+	if (gainCorr < -20)
+	   gainCorr = -20;
+	if (gainCorr > 20)
+	   gainCorr = 20;
+	int GRdB = gains. curr -  get_lnaGRdB (hwVersion, lnaState);
+	if (GRdB + gainCorr < 20)
+	   GRdB = 20;
+	else
+	if (GRdB + gainCorr > 59)
+	   GRdB = 59;
+	else
+	   GRdB = GRdB + gainCorr;
+
+	err = mir_sdr_RSP_SetGr (GRdB, lnaState, 1 , 0);
+	if (err != mir_sdr_Success) 
+	   fprintf (stderr,
+	            "error setting gainReduction at search phase (%d) %s\n",
+	                               GRdB,
+	                               errorCodes (err). toLatin1 (). data ());
 }
 
 void	sdrplayHandler::set_lnagainReduction (int lnaState) {
@@ -289,99 +371,44 @@ mir_sdr_ErrT	err;
 	                                       (float) (xi [i]) / denominator,
 	                                       (float) (xq [i]) / denominator);
 	   int res = p -> base -> addSymbol (symb);
-	   if (res == GO_ON)
-	      continue;
-	   if (res == DEVICE_UPDATE) {
-	      if (p -> theSwitch && (p -> hwVersion == 2)) {
-	         if (p -> selectedAntenna == 'a') {
-	            p -> selectedAntenna = 'b';
-	            err = mir_sdr_RSPII_AntennaControl
-	                                  (mir_sdr_RSPII_ANTENNA_B);
-	            if (err != mir_sdr_Success) 
-	               fprintf (stderr, "error %d in setting antenna B\n", err);
-	         }
-	         else {
-	            p  -> selectedAntenna = 'a';
-	            err = mir_sdr_RSPII_AntennaControl
-	                                  (mir_sdr_RSPII_ANTENNA_A);
-	            if (err != mir_sdr_Success) 
-	               fprintf (stderr, "error %d in setting antenna A\n", err);
-	         }
-	      }
+	   switch (res) {
+	      case GO_ON:
+	         continue;
+	   
+	      case DEVICE_UPDATE: {
+//	         if (p -> theSwitch && (p -> hwVersion == 2)) {
+//	            if (p -> selectedAntenna == 'a') {
+//	               p -> selectedAntenna = 'b';
+//	               err = mir_sdr_RSPII_AntennaControl
+//	                                  (mir_sdr_RSPII_ANTENNA_B);
+//	               if (err != mir_sdr_Success) 
+//	                  fprintf (stderr, "error %d in setting antenna B\n", err);
+//	            }
+//	            else {
+//	               p  -> selectedAntenna = 'a';
+//	               err = mir_sdr_RSPII_AntennaControl
+//	                                  (mir_sdr_RSPII_ANTENNA_A);
+//	               if (err != mir_sdr_Success) 
+//	                  fprintf (stderr, "error %d in setting antenna A\n", err);
+//	            }
+//	         }
 	           
-	      mir_sdr_GainValuesT gains;
-	      int	offset;
-	      float	lowVal;
-	      float	highVal;
-	      p -> base -> update_data (&offset, &lowVal, &highVal);
-	      if (++ teller > 20) {
-	         p -> setOffset (offset);
-	         err = mir_sdr_GetCurrentGain (&gains);
-	         if (err != mir_sdr_Success)
-	            fprintf (stderr, "error getting gain values %s\n",
-	                               p -> errorCodes (err). toLatin1 (). data ());
-	         float str = 10 * log10 ((highVal + 0.005)  / denominator);
-	         float lvv = 10 * log10 ((lowVal  + 0.005)  / denominator);
-//
-//	we compute the "error" in the gain setting,
-//	and we derive the GRdB value needed to correct that
-	         int gainCorr	= p -> gain_setpoint -> value () - str;
-	         if (gainCorr < - 20)
-	            gainCorr = -20;
-	         if (gainCorr > 20)
-	            gainCorr = 20;
-	         int GRdB	= gains. curr - get_lnaGRdB (p -> hwVersion,
-	                                                     p -> lnaState);
-	         if (GRdB + gainCorr < 20)
-	            GRdB = 20;
-	         else
-	         if (GRdB + gainCorr > 59)
-	            GRdB = 59;
-	         else
-	            GRdB = GRdB + gainCorr;
-	         if (GRdB != 0) 
-	            err = mir_sdr_RSP_SetGr (GRdB, p -> lnaState, 1 , 0);
-	         if (err != mir_sdr_Success)
-	            fprintf (stderr, "error updating GainReduction: GRdb = %d, lnaState = %d, curr = %f %d (%s)\n",
-	                     GRdB,
-	                     p -> lnaState,
-	                     gains. curr,
-	                     gainCorr,
-	                     p -> errorCodes (err). toLatin1 (). data ());
-	         p -> averageValue -> display (str);
-	         p -> nullValue -> display (lvv);
-	         p -> reportedGain -> display (gains. curr);
-	         teller	= 0;
+	         int	offset;
+	         float	lowVal, highVal;
+	         if (++ teller > 100) {
+	            p -> base -> update_data (&offset, &lowVal, &highVal);
+	            p -> setOffset (offset);
+	            p -> setGains  (lowVal, highVal);
+	            teller	= 0;
+	         }
 	      }
-	   }
-	   else
-	   if (res == INITIAL_STRENGTH) {
-	      mir_sdr_ErrT err;
-	      mir_sdr_GainValuesT gains;
-	      err = mir_sdr_GetCurrentGain (&gains);
-	      if (err != mir_sdr_Success)
-	         fprintf (stderr, "error getting gain values %s\n",
-	                           p -> errorCodes (err). toLatin1 (). data ());
+	      continue;
+	   
+	   case INITIAL_STRENGTH: {
 	      float str	= 10 * log10 ((p -> base -> initialSignal () + 0.005) / denominator);
-	      int gainCorr = p -> gain_setpoint -> value () - str; 
-	      if (gainCorr < -20)
-	         gainCorr = -20;
-	      if (gainCorr > 20)
-	         gainCorr = 20;
-	      int GRdB = gains. curr -  get_lnaGRdB (p -> hwVersion,
-	                                             p -> lnaState);
-	      if (GRdB + gainCorr < 20)
-	         GRdB = 20;
-	      else
-	      if (GRdB + gainCorr > 59)
-	         GRdB = 59;
-	      else
-	         GRdB = GRdB + gainCorr;
-	      err = mir_sdr_RSP_SetGr (GRdB, p -> lnaState, 1 , 0);
-	      if (err != mir_sdr_Success) 
-	         fprintf (stderr, "error setting gainReduction at search phase (%d) %s\n",
-	                                   GRdB,
-	                               p -> errorCodes (err). toLatin1 (). data ());
+	      p -> set_initialGain (str);
+	      }
+	      continue;
 	   }
 	}
 	(void)	firstSampleNum;
@@ -396,7 +423,7 @@ void	myGainChangeCallback (uint32_t	GRdB,
 sdrplayHandler	*p	= static_cast<sdrplayHandler *> (cbContext);
 	if ((GRdB & 0x80000000) != 0)
 	   return;
-	p -> GRdBDisplay	-> display ((int)GRdB);
+//	p -> GRdBDisplay	-> display ((int)GRdB);
 	(void)lnaGRdB;
 //	p -> lnaGRdBDisplay	-> display ((int)lnaGRdB);
 }
@@ -443,6 +470,12 @@ int	GRdB		= 30;
 	if (err != mir_sdr_Success)
 	   fprintf (stderr, "error = %s\n",
 	                errorCodes (err). toLatin1 (). data ());
+	if (agcControl -> isChecked ()) 
+	   mir_sdr_AgcControl (mir_sdr_AGC_100HZ , -30,
+                               0, 0, 0, 0, lnaGainSetting -> value());
+	else
+	   mir_sdr_AgcControl (mir_sdr_AGC_DISABLE, -30,
+                               0, 0, 0, 0, lnaGainSetting -> value());
 	running. store (true);
 	return true;
 }
@@ -460,6 +493,10 @@ mir_sdr_ErrT err;
 	running. store (false);
 }
 
+int32_t	sdrplayHandler::getVFOFrequency	(void) {
+	return vfoFrequency;
+}
+
 void	sdrplayHandler::resetBuffer	(void) {
 	_I_Buffer	-> FlushRingBuffer ();
 }
@@ -471,6 +508,16 @@ int16_t	sdrplayHandler::bitDepth	(void) {
 void	sdrplayHandler::set_debugControl (int debugMode) {
 	(void)debugMode;
 	mir_sdr_DebugEnable (debugControl -> isChecked () ? 1 : 0);
+}
+
+void	sdrplayHandler::set_agcControl (int agcMode) {
+	(void)agcMode;
+	if (agcControl -> isChecked ()) 
+	   mir_sdr_AgcControl (mir_sdr_AGC_100HZ , -30,
+                               0, 0, 0, 0, lnaGainSetting -> value());
+	else
+	   mir_sdr_AgcControl (mir_sdr_AGC_DISABLE, -30,
+                               0, 0, 0, 0, lnaGainSetting -> value());
 }
 
 void	sdrplayHandler::set_ppmControl (int ppm) {
@@ -552,10 +599,6 @@ QString	sdrplayHandler::errorCodes (mir_sdr_ErrT err) {
 	}
 }
 
-void	sdrplayHandler::setEnv	(dabProcessor *p) {
-	base	= p;
-}
-
 void	sdrplayHandler::show	(void) {
 	myFrame		-> show ();
 }
@@ -564,8 +607,8 @@ void	sdrplayHandler::hide	(void) {
 	myFrame		-> hide	();
 }
 
-bool	sdrplayHandler::isVisible	(void) {
-	return myFrame	-> isVisible ();
+bool	sdrplayHandler::isHidden	(void) {
+	return !myFrame	-> isVisible ();
 }
 
 bool	sdrplayHandler::isSDRPLAY_2	(void) {

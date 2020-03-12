@@ -1,26 +1,23 @@
 #
 /*
- *    Copyright (C) 2014 .. 2017
+ *    Copyright (C) 2017 .. 2020
  *    Jan van Katwijk (J.vanKatwijk@gmail.com)
  *    Lazy Chair Computing
  *
- *    This file is part of the Qt-DAB (formerly SDR-J, JSDR).
- *    Many of the ideas as implemented in Qt-DAB are derived from
- *    other work, made available through the GNU general Public License.
- *    All copyrights of the original authors are acknowledged.
+ *    This file is part of the sdrplayDab
  *
- *    Qt-DAB is free software; you can redistribute it and/or modify
+ *    sdrplayDab is free software; you can redistribute it and/or modify
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation; either version 2 of the License, or
  *    (at your option) any later version.
  *
- *    Qt-DAB is distributed in the hope that it will be useful,
+ *    sdrplayDab is distributed in the hope that it will be useful,
  *    but WITHOUT ANY WARRANTY; without even the implied warranty of
  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *    GNU General Public License for more details.
  *
  *    You should have received a copy of the GNU General Public License
- *    along with Qt-DAB; if not, write to the Free Software
+ *    along with sdrplayDab; if not, write to the Free Software
  *    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *      Main program
@@ -28,6 +25,7 @@
 #include        <QApplication>
 #include        <QSettings>
 #include	<QTranslator>
+#include	<QString>
 #include        <QDir>
 #include	<QDebug>
 #include        <unistd.h>
@@ -35,7 +33,7 @@
 #include        "radio.h"
 
 #define DEFAULT_INI     ".sdrplay-dab.ini"
-
+#define	PRESETS		".qt-dab-presets.xml"
 #ifndef	GITHASH
 #define	GITHASH	"      "
 #endif
@@ -49,11 +47,19 @@ QString fileName;
 	if (v. at (0) == QChar ('/'))           // full path specified
 	   return v;
 
-	fileName = QDir::homePath ();
+#ifdef	OSX_INIT_FILE
+	char *PathFile;
+	PathFile = getenv ("HOME");
+	fileName = PathFile;
+	fileName.append("/.qt-dab.ini");
+	qDebug() << fileName;
+#else
+
+	fileName = QDir::homePath();
 	fileName. append ("/");
 	fileName. append (v);
 	fileName = QDir::toNativeSeparators (fileName);
-
+#endif
 	if (!fileName. endsWith (".ini"))
 	   fileName. append (".ini");
 
@@ -67,17 +73,18 @@ QString initFileName = fullPathfor (QString (DEFAULT_INI));
 RadioInterface  *MyRadioInterface;
 
 // Default values
-int16_t         tii_delay       = 20;
 QSettings       *dabSettings;           // ini file
+QString		presetName	= PRESETS;
 int32_t		dataPort	= 8888;
 int     opt;
-
+QString freqExtension		= "";
+	
 	QCoreApplication::setOrganizationName ("Lazy Chair Computing");
 	QCoreApplication::setOrganizationDomain ("Lazy Chair Computing");
-	QCoreApplication::setApplicationName ("sdrplayDab");
+	QCoreApplication::setApplicationName ("qt-dab");
 	QCoreApplication::setApplicationVersion (QString (CURRENT_VERSION) + " Git: " + GITHASH);
 
-	while ((opt = getopt (argc, argv, "i:P:")) != -1) {
+	while ((opt = getopt (argc, argv, "i:P:Q:A:")) != -1) {
 	   switch (opt) {
 	      case 'i':
 	         initFileName = fullPathfor (QString (optarg));
@@ -87,12 +94,21 @@ int     opt;
 	         dataPort	= atoi (optarg);
 	         break;
 
-	     default:
+	      case 'A':
+	         freqExtension	= optarg;
+	         break;
+
+	      default:
 	         break;
 	   }
 	}
 
 	dabSettings =  new QSettings (initFileName, QSettings::IniFormat);
+
+	QString presets = QDir::homePath();
+	presets. append ("/");
+	presets. append (presetName);
+	presets = QDir::toNativeSeparators (presets);
 
 /*
  *      Before we connect control to the gui, we have to
@@ -101,19 +117,22 @@ int     opt;
 #if QT_VERSION >= 0x050600
 	QGuiApplication::setAttribute (Qt::AA_EnableHighDpiScaling);
 #endif
+
 	QApplication a (argc, argv);
 //	setting the language
-	QString locale = QLocale::system (). name ();
+	QString locale = QLocale::system(). name();
 	qDebug() << "main:" <<  "Detected system language" << locale;
 	setTranslator (locale);
 
-	a. setWindowIcon (QIcon (":/sdrplay-dab.ico"));
+	a. setWindowIcon (QIcon (":/qt-dab.ico"));
 
 	MyRadioInterface = new RadioInterface (dabSettings,
+	                                       presets,
+	                                       freqExtension,
 	                                       dataPort
                                                );
-	MyRadioInterface -> show ();
-        a. exec ();
+	MyRadioInterface -> show();
+        a. exec();
 /*
  *      done:
  */
@@ -123,6 +142,7 @@ int     opt;
 	qDebug ("It is done\n");
 	delete MyRadioInterface;
 	delete dabSettings;
+	return 1;
 }
 
 void	setTranslator (QString Language) {

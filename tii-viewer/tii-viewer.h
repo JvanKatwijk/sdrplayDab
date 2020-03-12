@@ -1,6 +1,6 @@
 #
 /*
- *    Copyright (C) 2014 .. 2017
+ *    Copyright (C) 2014 .. 2019
  *    Jan van Katwijk (J.vanKatwijk@gmail.com)
  *    Lazy Chair Computing
  *
@@ -27,6 +27,7 @@
 #include        "dab-constants.h"
 #include	<QFrame>
 #include	<QObject>
+#include	<QByteArray>
 #include	<fftw3.h>
 #include	"ui_tii-widget.h"
 #include	"ringbuffer.h"
@@ -44,13 +45,14 @@ Q_OBJECT
 public:
 			tiiViewer		(RadioInterface *,
 	                                         RingBuffer<std::complex<float>> *);
-			~tiiViewer		(void);
+			~tiiViewer		();
 	void		showSpectrum		(int32_t);
-	void		showSecondaries		(std::vector<int>);
+	void		showSecondaries		(QByteArray);
 	void		setBitDepth		(int16_t);
-	void		show			(void);
-	void		hide			(void);
-	bool		isHidden		(void);
+	void		show();
+	void		hide();
+	bool		isHidden();
+	void		clear();
 private:
 	RadioInterface	*myRadioInterface;
 	RingBuffer<std::complex<float>>	*tiiBuffer;

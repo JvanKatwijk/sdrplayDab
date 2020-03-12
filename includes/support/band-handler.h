@@ -22,7 +22,7 @@
 
 #ifndef	__BANDHANDLER__
 #define	__BANDHANDLER__
-#include	<stdint.h>
+#include	<cstdint>
 #include	<QComboBox>
 #include	<QString>
 //
@@ -30,10 +30,14 @@
 //
 class bandHandler {
 public:
-	bandHandler	(void);
-	~bandHandler	(void);
+	bandHandler	(const QString &);
+	~bandHandler	();
 void	setupChannels	(QComboBox *s, uint8_t band);
-int32_t Frequency	(uint8_t band, QString Channel);
+int32_t Frequency	(QString Channel);
+private:
+void	addItem		(char *name, int freq);
+
+	uint8_t		theBand;
 };
 #endif
 

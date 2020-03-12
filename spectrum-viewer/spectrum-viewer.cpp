@@ -40,24 +40,25 @@ QColor	curveColor;
 	this	-> spectrumBuffer	= sbuffer;
 	this	-> iqBuffer		= ibuffer;
 
-	colorString			= dabSettings -> value ("displaycolor", "black"). toString ();
+	colorString			= dabSettings -> value ("displaycolor", "black"). toString();
 	displayColor			= QColor (colorString);
-	colorString			= dabSettings -> value ("gridcolor", "white"). toString ();
+	colorString			= dabSettings -> value ("gridcolor", "white"). toString();
 	gridColor			= QColor (colorString);
-	colorString			= dabSettings -> value ("gridcolor", "white"). toString ();
+	colorString			= dabSettings -> value ("gridcolor", "white"). toString();
 	curveColor			= QColor (colorString);
 
-	displaySize			= dabSettings -> value ("displaySize", 1024).toInt ();
+	displaySize			= dabSettings -> value ("displaySize", 1024).toInt();
 	if ((displaySize & (displaySize - 1)) != 0)
 	   displaySize = 1024;
-	this	-> myFrame		= new QFrame (NULL);
+	this	-> myFrame		= new QFrame (nullptr);
 	setupUi (this -> myFrame);
 
-	this	-> myFrame	-> hide ();
+	this	-> myFrame	-> hide();
 	displayBuffer. resize (displaySize);
-	memset (displayBuffer. data (), 0, displaySize * sizeof (double));
+	memset (displayBuffer. data(), 0, displaySize * sizeof (double));
 	this	-> spectrumSize	= 4 * displaySize;
-	spectrum		= (std::complex<float> *)fftwf_malloc (sizeof (fftwf_complex) * spectrumSize);
+	spectrum		= (std::complex<float> *)
+	               fftwf_malloc (sizeof (fftwf_complex) * spectrumSize);
         plan    = fftwf_plan_dft_1d (spectrumSize,
                                     reinterpret_cast <fftwf_complex *>(spectrum),
                                     reinterpret_cast <fftwf_complex *>(spectrum),
@@ -89,7 +90,7 @@ QColor	curveColor;
 	spectrumCurve	-> setBrush (*ourBrush);
 	spectrumCurve	-> attach (plotgrid);
 	
-	Marker		= new QwtPlotMarker ();
+	Marker		= new QwtPlotMarker();
 	Marker		-> setLineStyle (QwtPlotMarker::VLine);
 	Marker		-> setLinePen (QPen (Qt::red));
 	Marker		-> attach (plotgrid);
@@ -105,10 +106,10 @@ QColor	curveColor;
 	myIQDisplay	= new IQDisplay (iqDisplay, 256);
 }
 
-	spectrumViewer::~spectrumViewer	(void) {
+	spectrumViewer::~spectrumViewer() {
 	fftwf_destroy_plan (plan);
 	fftwf_free	(spectrum);
-	myFrame		-> hide ();
+	myFrame		-> hide();
 	delete		Marker;
 	delete		ourBrush;
 	delete		spectrumCurve;
@@ -122,29 +123,32 @@ double	Y_values [displaySize];
 int16_t	i, j;
 double	temp	= (double)INPUT_RATE / 2 / displaySize;
 int16_t	averageCount	= 5;
-
 	   
 	(void)amount;
-	if (spectrumBuffer -> GetRingBufferReadAvailable () < spectrumSize)
+	if (spectrumBuffer -> GetRingBufferReadAvailable() < spectrumSize)
 	   return;
 
 	spectrumBuffer	-> getDataFromBuffer (spectrum, spectrumSize);
-	spectrumBuffer	-> FlushRingBuffer ();
-	if (myFrame	-> isHidden ()) {
-	   spectrumBuffer	-> FlushRingBuffer ();
+	spectrumBuffer	-> FlushRingBuffer();
+	if (myFrame	-> isHidden()) {
+	   spectrumBuffer	-> FlushRingBuffer();
 	   return;
 	}
 
-//	and window it
 //	first X axis labels
 	for (i = 0; i < displaySize; i ++)
 	   X_axis [i] = 
 	         ((double)vfoFrequency - (double)(INPUT_RATE / 2) +
 	          (double)((i) * (double) 2 * temp)) / ((double)1000);
 //
+//	and window it
 //	get the buffer data
 	for (i = 0; i < spectrumSize; i ++)
-	   spectrum [i] = cmul (spectrum [i], Window [i]);
+	   if (std::isnan (abs (spectrum [i])) ||
+	                 std::isinf (abs (spectrum [i])))
+	      spectrum [i] = std::complex<float> (0, 0);
+	   else
+	      spectrum [i] = cmul (spectrum [i], Window [i]);
 
 	fftwf_execute (plan);
 //
@@ -167,15 +171,16 @@ int16_t	averageCount	= 5;
 	for (i = 0; i < displaySize; i ++) {
 	   if (std::isnan (Y_values [i]) || std::isinf (Y_values [i]))
 	      continue;
+
 	   displayBuffer [i] = 
 	          (double)(averageCount - 1) /averageCount * displayBuffer [i] +
 	           1.0f / averageCount * Y_values [i];
 	}
 
 	memcpy (Y_values,
-	        displayBuffer. data (), displaySize * sizeof (double));
+	        displayBuffer. data(), displaySize * sizeof (double));
 	ViewSpectrum (X_axis, Y_values,
-	              scopeAmplification -> value (),
+	              scopeAmplification -> value(),
 	              vfoFrequency / 1000);
 }
 
@@ -184,9 +189,9 @@ void	spectrumViewer::ViewSpectrum (double *X_axis,
 	                               double amp,
 	                               int32_t marker) {
 uint16_t	i;
-float	amp1	= amp;
+float	amp1	= amp / 100;
 
-	amp		= amp / 100.0 * (-get_db (0));
+	amp		= amp / 100.0 * (- get_db (0));
 	plotgrid	-> setAxisScale (QwtPlot::xBottom,
 				         (double)X_axis [0],
 				         X_axis [displaySize - 1]);
@@ -194,9 +199,8 @@ float	amp1	= amp;
 	plotgrid	-> setAxisScale (QwtPlot::yLeft,
 				         get_db (0), get_db (0) + amp);
 //				         get_db (0), 0);
-
 	for (i = 0; i < displaySize; i ++) 
-	   Y1_value [i] = get_db (amp1 / 100 * Y1_value [i]); 
+	   Y1_value [i] = get_db (amp1 * Y1_value [i]); 
 
 	spectrumCurve	-> setBaseline (get_db (0));
 	Y1_value [0]		= get_db (0);
@@ -221,16 +225,16 @@ void	spectrumViewer::setBitDepth	(int16_t d) {
 	   normalizer <<= 1;
 }
 
-void	spectrumViewer::show		(void) {
-	myFrame	-> show ();
+void	spectrumViewer::show() {
+	myFrame	-> show		();
 }
 
-void	spectrumViewer::hide		(void) {
-	myFrame	-> hide ();
+void	spectrumViewer::hide() {
+	myFrame	-> hide		();
 }
 
-bool	spectrumViewer::isHidden	(void) {
-	return myFrame -> isHidden ();
+bool	spectrumViewer::isHidden() {
+	return myFrame -> isHidden();
 }
 
 void	spectrumViewer::showIQ	(int amount) {
@@ -238,10 +242,10 @@ std::complex<float> Values [amount];
 int16_t	i;
 int16_t	t;
 double	avg	= 0;
-int	scopeWidth	= scopeSlider -> value ();
+int	scopeWidth	= scopeSlider -> value();
 
 	t = iqBuffer -> getDataFromBuffer (Values, amount);
-	if (myFrame -> isHidden ())
+	if (myFrame -> isHidden())
 	   return;
 
 	for (i = 0; i < t; i ++) {
@@ -255,7 +259,7 @@ int	scopeWidth	= scopeSlider -> value ();
 }
 
 void	spectrumViewer:: showQuality (float q) {
-	if (!myFrame -> isHidden ())
+	if (!myFrame -> isHidden())
 	   quality_display -> display (q);
 }
 

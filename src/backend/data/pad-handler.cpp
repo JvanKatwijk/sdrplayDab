@@ -53,7 +53,7 @@
 	segmentNumber	= -1;
 }
 
-	padHandler::~padHandler	(void) {
+	padHandler::~padHandler() {
 	if (currentSlide != nullptr)
 	   delete currentSlide;
 }
@@ -119,9 +119,9 @@ int16_t	i;
 	      case 2:	// start of fragment, extract the length
 	         if (firstSegment && !lastSegment) {
 	            segmentNumber   = b [last - 2] >> 4;
-	            if (dynamicLabelText. size () > 0)
+	            if (dynamicLabelText. size() > 0)
 	               showLabel (dynamicLabelText);
-	            dynamicLabelText. clear ();
+	            dynamicLabelText. clear();
 	         }
 	         still_to_go     = b [last - 1] & 0x0F;
 	         shortpadData. resize (0);
@@ -134,13 +134,13 @@ int16_t	i;
 	            shortpadData. push_back (b [last - 1 - i]);
 	         }
 
-	         if ((still_to_go <= 0) && (shortpadData. size () > 1)) {
+	         if ((still_to_go <= 0) && (shortpadData. size() > 1)) {
 	            shortpadData. push_back (0);
 	            dynamicLabelText.
 	               append (toQStringUsingCharset 
-	                             ((char *)(shortpadData. data ()),
+	                             ((char *)(shortpadData. data()),
                                       (CharacterSet)charSet,
-	                              shortpadData. size ()));
+	                              shortpadData. size()));
 	            shortpadData. resize (0);
 	         }
 	         break;
@@ -154,20 +154,20 @@ int16_t	i;
 	      still_to_go --;
 	   }
 //	at the end of a frame
-	   if ((still_to_go <= 0) && (shortpadData. size () > 0)) {
+	   if ((still_to_go <= 0) && (shortpadData. size() > 0)) {
 	      shortpadData . push_back (0);
 //
 //	just to avoid doubling by unsollicited shortpads
 	      dynamicLabelText.
-	               append (toQStringUsingCharset ((char *)(shortpadData. data ()),
+	               append (toQStringUsingCharset ((char *)(shortpadData. data()),
                                                       (CharacterSet)charSet));
 	      shortpadData. resize (0);
 //	if we are at the end of the last segment (and the text is not empty)
 //	then show it.
 	      if (!firstSegment && lastSegment) {
-	         if (dynamicLabelText. size () > 0)
+	         if (dynamicLabelText. size() > 0)
 	            showLabel (dynamicLabelText);
-	         dynamicLabelText. clear ();
+	         dynamicLabelText. clear();
 	      }
 	   }
 	}
@@ -244,8 +244,8 @@ std::vector<uint8_t> data;		// for the local addition
 
 	      case 2:	 // Dynamic label segment, start of X-PAD data group
 	      case 3:	 // Dynamic label segment, continuation of X-PAD data group
-	         dynamicLabel ((uint8_t *)(data. data ()),
-	                        data. size (), CI_table [i]);
+	         dynamicLabel ((uint8_t *)(data. data()),
+	                        data. size(), CI_table [i]);
 	         break;
 
 	      case 12:	 // MOT, start of X-PAD data group
@@ -269,7 +269,7 @@ std::vector<uint8_t> data;		// for the local addition
 //	A dynamic label is created from a sequence of (dynamic) xpad
 //	fields, starting with CI = 2, continuing with CI = 3
 void	padHandler::dynamicLabel (uint8_t *data, int16_t length, uint8_t CI) {
-static int16_t segmentno           = 0;
+static int16_t segmentno	   = 0;
 static int16_t remainDataLength    = 0;
 static bool    isLastSegment       = false;
 static bool    moreXPad            = false;
@@ -286,14 +286,14 @@ int16_t  dataLength                = 0;
 	   if (first) { 
 	      segmentno = 1;
 	      charSet = (prefix >> 4) & 017;
-	      dynamicLabelText. clear ();
+	      dynamicLabelText. clear();
 	   }
 	   else 
 	      segmentno = ((prefix >> 4) & 07) + 1;
 
 	   if (Cflag) {		// special dynamic label command
 	      // the only specified command is to clear the display
-	      dynamicLabelText. clear ();
+	      dynamicLabelText. clear();
 	   }
 	   else {		// Dynamic text length
 	      int16_t totalDataLength = field_1 + 1;
@@ -355,18 +355,20 @@ int16_t  dataLength                = 0;
 //	Called at the start of the msc datagroupfield,
 //	the msc_length was given by the preceding appType "1"
 void	padHandler::new_MSC_element (std::vector<uint8_t> data) {
+
 //	if (mscGroupElement) { 
-//	   if (msc_dataGroupBuffer. size () < dataGroupLength)
-//	      fprintf (stderr, "short ? %d %d\n",
-//	                              msc_dataGroupBuffer. size (),
-//	                              dataGroupLength);
-//	   build_MSC_segment (msc_dataGroupBuffer);
-//	   mscGroupElement	= false;
-//	   show_motHandling (false);
+////	   if (msc_dataGroupBuffer. size() < dataGroupLength)
+////	      fprintf (stderr, "short ? %d %d\n",
+////	                              msc_dataGroupBuffer. size(),
+////	                              dataGroupLength);
+//	   msc_dataGroupBuffer. clear();
+//	   build_MSC_segment (data);
+//	   mscGroupElement	= true;
+//	   show_motHandling (true);
 //	}
 
-	if (data. size () >= dataGroupLength) {	// msc element is single item
-	   msc_dataGroupBuffer. clear ();
+	if (data. size() >= (uint16_t)dataGroupLength) { // msc element is single item
+	   msc_dataGroupBuffer. clear();
 	   build_MSC_segment (data);
 	   mscGroupElement = false;
 	   show_motHandling (true);
@@ -375,15 +377,14 @@ void	padHandler::new_MSC_element (std::vector<uint8_t> data) {
 	}
 
 	mscGroupElement		= true;
-	msc_dataGroupBuffer. clear ();
+	msc_dataGroupBuffer. clear();
 	msc_dataGroupBuffer	= data;
 	show_motHandling (true);
 }
 
 //
 void	padHandler::add_MSC_element	(std::vector<uint8_t> data) {
-int16_t	i;
-int32_t	currentLength = msc_dataGroupBuffer. size ();
+int32_t	currentLength = msc_dataGroupBuffer. size();
 //
 //	just to ensure that, when a "12" appType is missing, the
 //	data of "13" appType elements is not endlessly collected.
@@ -393,10 +394,10 @@ int32_t	currentLength = msc_dataGroupBuffer. size ();
 
 	msc_dataGroupBuffer. insert (std::end (msc_dataGroupBuffer),
 	                             std::begin (data), std::end (data));
-	if (msc_dataGroupBuffer. size () >= dataGroupLength) {
+	if (msc_dataGroupBuffer. size() >= (uint32_t)dataGroupLength) {
 	   build_MSC_segment (msc_dataGroupBuffer);
-	   msc_dataGroupBuffer. clear ();
-	   mscGroupElement	= false;
+	   msc_dataGroupBuffer. clear();
+//	   mscGroupElement	= false;
 	   show_motHandling (false);
 	}
 }
@@ -405,19 +406,19 @@ void	padHandler::build_MSC_segment (std::vector<uint8_t> data) {
 //	we have a MOT segment, let us look what is in it
 //	according to DAB 300 401 (page 37) the header (MSC data group)
 //	is
-int32_t	size	= data. size () < dataGroupLength ? data. size () :
+int32_t	size	= data. size() < (uint32_t)dataGroupLength ? data. size() :
 	                                            dataGroupLength;
 	   
-	uint8_t		groupType	=  data [0] & 0xF;
-	uint8_t		continuityIndex = (data [1] & 0xF0) >> 4;
-	uint8_t		repetitionIndex =  data [1] & 0xF;
-	int16_t		segmentNumber	= -1;		// default
-	uint16_t	transportId	= 0;	// default
-	bool		lastFlag	= false;	// default
-	uint16_t	index;
+uint8_t		groupType	=  data [0] & 0xF;
+//uint8_t	continuityIndex = (data [1] & 0xF0) >> 4;
+//uint8_t	repetitionIndex =  data [1] & 0xF;
+int16_t		segmentNumber	= -1;		// default
+uint16_t	transportId	= 0;	// default
+bool		lastFlag	= false;	// default
+uint16_t	index;
 
 	if ((data [0] & 0x40) != 0) {
-	   bool res	= check_crc_bytes (data. data (), size - 2);
+	   bool res	= check_crc_bytes (data. data(), size - 2);
 	   if (!res) {
 //	      fprintf (stderr, "build_MSC_segment fails on crc check\n");
 	      return;
@@ -432,12 +433,14 @@ int32_t	size	= data. size () < dataGroupLength ? data. size () :
 //	extensionflag
 	bool	extensionFlag	= (data [0] & 0x80) != 0;
 //	if the segmentflag is on, then a lastflag and segmentnumber are
-//	available, i.e. 2 bytes more
+//	available, i.e. 2 bytes more.
+//	Theoretically, the segment number can be as large as 16384
 	index			= extensionFlag ? 4 : 2;
 	bool	segmentFlag	=  (data [0] & 0x20) != 0;
 	if ((segmentFlag) != 0) {
 	   lastFlag		= data [index] & 0x80;
-	   segmentNumber	= ((data [index] & 0x7F) << 8) | data [index + 1];
+	   segmentNumber	= ((data [index] & 0x7F) << 8) |
+	                                               data [index + 1];
 	   index += 2;
 	}
 
@@ -450,15 +453,19 @@ int32_t	size	= data. size () < dataGroupLength ? data. size () :
 	      index += 3;
 	   }
 	   else {
-	      fprintf (stderr, "sorry no transportId\n");
+//	      fprintf (stderr, "sorry no transportId\n");
 	      return;
 	   }
 	   index += (lengthIndicator - 2);
 	}
 
+	if (transportId == 0)	// no idea wat it means
+	   return;
 
 	uint32_t segmentSize	= ((data [index + 0] & 0x1F) << 8) |
 	                            data [index + 1];
+//	fprintf (stderr, "segmentSize = %d (transportId = %d)\n",
+//	                      segmentSize, transportId);
 //
 //	handling MOT in the PAD, we only deal here with type 3/4
 	switch (groupType) {
@@ -474,10 +481,10 @@ int32_t	size	= data. size () < dataGroupLength ? data. size () :
 	                                         lastFlag);
 	      }
 	      else {
-	         if (currentSlide -> get_transportId () == transportId)
+	         if (currentSlide -> get_transportId() == transportId)
 	            break;
 //	         fprintf (stderr, "out goes %d, in comes %d\n",
-//	                          currentSlide -> get_transportId (),
+//	                          currentSlide -> get_transportId(),
 //	                                           transportId);
 	         delete currentSlide;
 	         currentSlide	= new motObject (myRadioInterface,
@@ -493,7 +500,7 @@ int32_t	size	= data. size () < dataGroupLength ? data. size () :
 	   case 4:
 	      if (currentSlide == nullptr)
 	         return;
-	      if (currentSlide -> get_transportId () == transportId) {
+	      if (currentSlide -> get_transportId() == transportId) {
 //	         fprintf (stderr, "add segment %d of  %d\n",
 //	                           segmentNumber, transportId);
 	         currentSlide -> addBodySegment (&data [index + 2],

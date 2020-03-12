@@ -73,11 +73,12 @@ public:
 	                         int16_t,
 	                         int16_t,
 	                         int16_t,
+	                         QString,
 	                         RingBuffer<float> *,
 	                         RingBuffer<std::complex <float>> *,
 	                         RingBuffer<std::complex <float>> *,
 	                         RingBuffer<std::complex <float>> *,
-	                         QString
+	                         RingBuffer<uint8_t> *
 	                        );
 		~dabProcessor	(void);
 	int		addSymbol		(std::complex<float>);
@@ -86,33 +87,33 @@ public:
 	void		setOffset		(int32_t);
 	void		coarseCorrectorOn	(void);
 	void		coarseCorrectorOff	(void);
+	void		startDumping		(SNDFILE *);
+	void		stopDumping		();
+	void		set_scanMode		(bool);
 	void		update_data		(int *, float *, float *);
 	float		initialSignal		(void);
 //
-//	for special occasions
-	void		set_phaseComputing	(bool);
-
 //	inheriting from our delegates
 	void		set_tiiCoordinates	(void);
-	void		setSelectedService      (QString &);
-	bool            is_audioService         (QString &s);
-        bool            is_packetService        (QString &s);
-        void            dataforAudioService     (QString &,
-                                                     audiodata *, int16_t);
-	void		dataforPacketService    (QString &,
-                                                     packetdata *, int16_t);
-	void		reset_msc		(void);
+
+	QString		findService		(uint32_t, int);
+	void		getParameters		(const QString &,
+	                                         uint32_t *, int *);
+	QStringList	getServices		();
+	bool		is_audioService		(const QString &s);
+	bool		is_packetService	(const QString &s);
+        void		dataforAudioService     (const QString &,
+	                                             audiodata *);
+        void		dataforPacketService	(const QString &,
+	                                             packetdata *, int16_t);
+	void		reset_msc();
 	void		set_audioChannel	(audiodata *,
 	                                             RingBuffer<int16_t> *);
 	void		set_dataChannel		(packetdata *,
 	                                             RingBuffer<uint8_t> *);
-        uint8_t		get_ecc                 (void);
-        int32_t		get_ensembleId          (void);
-        QString		get_ensembleName        (void);
-	void		clearEnsemble		(void);
-
-	void		stopDumping		(void);
-	void		startDumping		(SNDFILE *f);
+        uint8_t		get_ecc();
+        int32_t		get_ensembleId();
+        QString		get_ensembleName();
 private:
 	bool		phaseComputing;
 	void		dump			(std::complex<float>);
@@ -169,14 +170,13 @@ private:
 	void		handle_tii_detection	(std::vector<std::complex<float>>);
 
 signals:
-	void		setSynced		(char);
+	void		setSynced		(bool);
 	void		No_Signal_Found		(void);
 	void		setSyncLost		(void);
-	void		showCoordinates		(int);
-	void		showSecondaries		(int);
 	void		show_Spectrum		(int);
 	void		set_freqOffset		(int);
-	void		show_tii		(int);
+	void		show_tii		(QByteArray);
+	void		show_snr		(int);
 };
 #endif
 

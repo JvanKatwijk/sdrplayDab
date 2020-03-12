@@ -1,3 +1,4 @@
+
 #
 /*
  *    Copyright (C) 2013 .. 2017
@@ -23,8 +24,8 @@
 #ifndef	__PHASEREFERENCE__
 #define	__PHASEREFERENCE__
 #include	<QObject>
-#include	<stdio.h>
-#include	<stdint.h>
+#include	<cstdio>
+#include	<cstdint>
 #include	<vector>
 #include	"fft-handler.h"
 #include	"phasetable.h"
@@ -41,8 +42,8 @@ public:
 	                                         int16_t,
 	                                         int16_t,
 	                                         int16_t,
-	                                         RingBuffer<float> *);
-			~phaseReference		(void);
+						 RingBuffer<float> *b = nullptr);
+			~phaseReference();
 	int32_t		findIndex		(std::vector<std::complex<float>>, int);
 	int16_t		estimate_CarrierOffset	(std::vector<std::complex<float>>);
 	float		estimate_FrequencyOffset (std::vector<std::complex<float>>);
@@ -50,14 +51,15 @@ public:
 //	This one is used in the ofdm decoder
 	std::vector<std::complex<float>> refTable;
 private:
-	std::vector<std::complex<float>> prevTable;
 	dabParams	params;
 	fftHandler	my_fftHandler;
 	RingBuffer<float> *response;
+	std::vector<float> phaseDifferences;
 	int16_t		threshold;
 	int16_t		diff_length;
 	int16_t		depth;
 	int32_t		T_u;
+	int32_t		T_g;
 	int16_t		carriers;
 
 	std::complex<float>	*fft_buffer;
@@ -65,7 +67,7 @@ private:
 	int32_t		framesperSecond;	
 	int32_t		displayCounter;
 signals:
-	void		showImpulse	(int);
+	void		showCorrelation	(int, int);
 	void		showIndex	(int);
 };
 #endif

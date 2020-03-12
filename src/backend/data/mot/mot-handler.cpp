@@ -40,23 +40,23 @@ struct {
 	this	-> picturesPath	= picturesPath;
 	orderNumber		= 0;
 
-	theDirectory		= NULL;
+	theDirectory		= nullptr;
 	for (int i = 0; i < 15; i ++)
 	   motTable [i]. orderNumber = -1;
 }
 
-	motHandler::~motHandler (void) {
+	motHandler::~motHandler() {
 int	i;
 
 	for (i = 0; i < 15; i ++)
 	   if (motTable [i]. orderNumber > 0)
 	      delete motTable [i]. motSlide;
-	if (theDirectory != NULL)
+	if (theDirectory != nullptr)
 	   delete theDirectory;
 }
 
 void	motHandler::add_mscDatagroup (std::vector<uint8_t> msc) {
-uint8_t *data		= (uint8_t *)(msc. data ());
+uint8_t *data		= (uint8_t *)(msc. data());
 bool	extensionFlag	= getBits_1 (data, 0) != 0;
 bool	crcFlag		= getBits_1 (data, 1) != 0;
 bool	segmentFlag	= getBits_1 (data, 2) != 0;
@@ -72,11 +72,11 @@ uint8_t	lengthInd;
 int32_t	i;
 
 	(void)CI;
-	if (msc. size () <= 0) {
+	if (msc. size() <= 0) {
 	   return;
 	}
 
-	if (crcFlag && !check_CRC_bits (data, msc.size ())) 
+	if (crcFlag && !check_CRC_bits (data, msc.size())) 
 	   return;
 
 	if (extensionFlag)
@@ -99,7 +99,7 @@ int32_t	i;
 	}
 
 	int32_t		sizeinBits	=
-	              msc. size () - next - (crcFlag != 0 ? 16 : 0);
+	              msc. size() - next - (crcFlag != 0 ? 16 : 0);
 
 	if (!transportIdFlag)
 	   return;
@@ -116,7 +116,7 @@ int32_t	i;
 	   case 3:
 	      if (segmentNumber == 0) {
 	         motObject *h = getHandle (transportId);
-	         if (h != NULL) 
+	         if (h != nullptr) 
 	            break;
 	         h = new motObject (myRadioInterface,
 	                            picturesPath,
@@ -131,7 +131,7 @@ int32_t	i;
 
 	   case 4: {
 	         motObject *h = getHandle (transportId);
-	         if (h == NULL)
+	         if (h == nullptr)
 	            break;
 	         h -> addBodySegment (&motVector [2],
 	                              segmentNumber,
@@ -142,11 +142,11 @@ int32_t	i;
 
 	   case 6:
 	      if (segmentNumber == 0) { 	// MOT directory
-	         if (theDirectory != NULL)
-	            if (theDirectory -> get_transportId () == transportId)
+	         if (theDirectory != nullptr)
+	            if (theDirectory -> get_transportId() == transportId)
 	               break;	// already existing
 
-	         if (theDirectory != NULL)	// an old one, replace it
+	         if (theDirectory != nullptr)	// an old one, replace it
 	            delete theDirectory;
 
 	         int32_t segmentSize = ((motVector [0] & 0x1F) << 8) |
@@ -157,11 +157,10 @@ int32_t	i;
 	                           ((segment [2]) <<  8) | segment [3];
 	         uint16_t numObjects
 	                        = (segment [4] << 8) | segment [5];
-	         int32_t period = (segment [6] << 16) |
-	                          (segment [7] <<  8) | segment [8];
-	         int32_t segSize
-	                        = ((segment [9] & 0x1F) << 8) |
-	                           segment [10];
+//	         int32_t period = (segment [6] << 16) |
+//	                          (segment [7] <<  8) | segment [8];
+//	         int32_t segSize
+//	                        = ((segment [9] & 0x1F) << 8) | segment [10];
 	         theDirectory	= new motDirectory (myRadioInterface,
 	                                            picturesPath,
 	                                            transportId,
@@ -171,8 +170,8 @@ int32_t	i;
 	                                            segment);
 	      }
 	      else {
-	         if ((theDirectory == NULL) || 
-	                (theDirectory -> get_transportId () != transportId))
+	         if ((theDirectory == nullptr) || 
+	                (theDirectory -> get_transportId() != transportId))
 	            break;
 	         theDirectory -> directorySegment (transportId,
 	                                           &motVector [2],
@@ -194,9 +193,9 @@ int	i;
 	   if ((motTable [i]. orderNumber >= 0) &&
 	                   (motTable [i]. transportId == transportId))
 	      return motTable [i]. motSlide;
-	if (theDirectory != NULL)
+	if (theDirectory != nullptr)
 	   return theDirectory -> getHandle (transportId);
-	return NULL;
+	return nullptr;
 }
 
 void	motHandler::setHandle (motObject *h, uint16_t transportId) {

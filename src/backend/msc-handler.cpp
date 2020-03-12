@@ -37,42 +37,43 @@ static int cifTable [] = {18, 72, 0, 36};
 //
 		mscHandler::mscHandler	(RadioInterface *mr,
 	                                 uint8_t	dabMode,
-	                                 QString	picturesPath) :
+	                                 QString	picturesPath,
+	                                 RingBuffer<uint8_t> *frameBuffer) :
 	                                       params (dabMode),
 	                                       my_fftHandler (dabMode),
 	                                       myMapper (dabMode),
-	                                       bufferSpace (params. get_L ()){
+	                                       bufferSpace (params. get_L()){
 	myRadioInterface	= mr;
 	this	-> picturesPath	= picturesPath;
+	this	-> frameBuffer	= frameBuffer;
 	cifVector. resize (55296);
-//	theBackends. push_back (new virtualBackend (0, 0));
-	BitsperBlock		= 2 * params. get_carriers ();
-	nrBlocks		= params. get_L ();
+	BitsperBlock		= 2 * params. get_carriers();
+	nrBlocks		= params. get_L();
 
 	command. resize (nrBlocks);
-	
 	for (int i = 0; i < nrBlocks; i ++)
-	   command [i]. resize (params. get_T_u ());
+	   command [i]. resize (params. get_T_u());
+
 	amount          = 0;
-	fft_buffer                      = my_fftHandler. getVector ();
-	phaseReference                  .resize (params. get_T_u ());
+	fft_buffer                      = my_fftHandler. getVector();
+	phaseReference                  .resize (params. get_T_u());
 
 	numberofblocksperCIF = cifTable [(dabMode - 1) & 03];
 	work_to_be_done. store (false);
-	start ();
+	running. store (false);
 }
 
-		mscHandler::~mscHandler	(void) {
+		mscHandler::~mscHandler() {
 	running. store (false);
-	while (isRunning ())
+	while (isRunning())
 	   usleep (100);
-	locker. lock ();
+	locker. lock();
 	work_to_be_done. store (false);
 	for (auto const &b : theBackends) {
-	   b -> stopRunning ();
+	   b -> stopRunning();
 	   delete b;
 	}
-	locker. unlock ();
+	locker. unlock();
 	theBackends. resize (0);
 }
 
@@ -81,93 +82,96 @@ static int cifTable [] = {18, 72, 0, 36};
 //	will handle the data from the buffer
 void	mscHandler::processBlock_0 (std::complex<float> *b) {
 	bufferSpace. acquire (1);
-	memcpy (command [0]. data (), b,
-	            params. get_T_u () * sizeof (std::complex<float>));
-	helper. lock ();
+	memcpy (command [0]. data(), b,
+	            params. get_T_u() * sizeof (std::complex<float>));
+	helper. lock();
 	amount ++;
-        commandHandler. wakeOne ();
-        helper. unlock ();
+        commandHandler. wakeOne();
+        helper. unlock();
 }
 
 void	mscHandler::process_Msc	(std::complex<float> *b, int blkno) {
 	bufferSpace. acquire (1);
-        memcpy (command [blkno]. data (), b,
-	            params. get_T_u () * sizeof (std::complex<float>));
-        helper. lock ();
+        memcpy (command [blkno]. data(), b,
+	            params. get_T_u() * sizeof (std::complex<float>));
+        helper. lock();
         amount ++;
-        commandHandler. wakeOne ();
-        helper. unlock ();
+        commandHandler. wakeOne();
+        helper. unlock();
 }
 
-void    mscHandler::run        (void) {
+void    mscHandler::run () {
 int	currentBlock	= 0;
 std::vector<int16_t> ibits;
 
+	if (running. load ())
+	   fprintf (stderr, "already running\n");
 	running. store (true);
 	ibits. resize (BitsperBlock);
         while (running. load ()) {
-           helper. lock ();
+           helper. lock();
            commandHandler. wait (&helper, 100);
            helper. unlock ();
-           while ((amount > 0) && running. load ()) {
-	      memcpy (fft_buffer, command [currentBlock]. data (),
-	                 params. get_T_u () * sizeof (std::complex<float>));
+           while ((amount > 0) && running. load()) {
+	      memcpy (fft_buffer, command [currentBlock]. data(),
+	                 params. get_T_u() * sizeof (std::complex<float>));
 //
 //	block 3 and up are needed as basis for demodulation the "mext" block
 //	"our" msc blocks start with blkno 4
-	      my_fftHandler. do_FFT ();
+	      my_fftHandler. do_FFT();
               if (currentBlock >= 4) {
-                 for (int i = 0; i < params. get_carriers (); i ++) {
+                 for (int i = 0; i < params. get_carriers(); i ++) {
                     int16_t      index   = myMapper. mapIn (i);
                     if (index < 0)
-                       index += params. get_T_u ();
+                       index += params. get_T_u();
 
                     std::complex<float>  r1 = fft_buffer [index] *
                                        conj (phaseReference [index]);
                     float ab1    = jan_abs (r1);
 //      Recall:  the viterbi decoder wants 127 max pos, - 127 max neg
 //      we make the bits into softbits in the range -127 .. 127
-                    ibits [i]            =  - real (r1) / ab1 * 127.0;
-                    ibits [params. get_carriers () + i]
-	                                 =  - imag (r1) / ab1 * 127.0;
+                    ibits [i]            =  - real (r1) / ab1 * 511.0;
+                    ibits [params. get_carriers() + i]
+	                                 =  - imag (r1) / ab1 * 511.0;
                  }
 
 	         process_mscBlock (ibits, currentBlock);
 	      }
-	      memcpy (phaseReference. data (), fft_buffer,
-	                 params. get_T_u () * sizeof (std::complex<float>));
+	      memcpy (phaseReference. data(), fft_buffer,
+	                 params. get_T_u() * sizeof (std::complex<float>));
               bufferSpace. release (1);
-              helper. lock ();
+              helper. lock();
               currentBlock = (currentBlock + 1) % (nrBlocks);
               amount -= 1;
-              helper. unlock ();
+              helper. unlock();
            }
         }
 }
 //	This function is to be called between invocations of
 //	services
 //	It might be called several times, so ...
-void	mscHandler::reset	(void) {
-int i;
+void	mscHandler::reset() {
+	if (!running. load ())
+	   return;
 	running. store (false);
-	while (isRunning ())
+	while (isRunning())
 	   usleep (100);
-	locker. lock ();
+	locker. lock();
 	work_to_be_done. store (false);
 	for (auto const &b : theBackends) {
-	   b -> stopRunning ();
+	   b -> stopRunning();
 	   delete b;
 	}
 	theBackends. resize (0);
 
-	bufferSpace. release (nrBlocks - bufferSpace. available ());
+	bufferSpace. release (nrBlocks - bufferSpace. available());
 	amount	= 0;
-	locker. unlock ();
-	start ();
+	locker. unlock();
+	start();
 }
 
-void	mscHandler::stop	(void) {
-	reset ();
+void	mscHandler::stop() {
+	reset();
 }
 //
 //	Note, the set_Channel function is called from within a
@@ -178,15 +182,16 @@ void	mscHandler::stop	(void) {
 void	mscHandler::set_Channel (descriptorType *d,
 	                         RingBuffer<int16_t> *audioBuffer,
 	                         RingBuffer<uint8_t> *dataBuffer) {
-	locker. lock ();
+	locker. lock();
 //
 	theBackends. push_back (new Backend (myRadioInterface,
 	                                     d,
 	                                     audioBuffer,
 	                                     dataBuffer,
+	                                     frameBuffer,
 	                                     picturesPath));
 	work_to_be_done. store (true);
-	locker. unlock ();
+	locker. unlock();
 }
 
 //
@@ -196,21 +201,19 @@ void	mscHandler::set_Channel (descriptorType *d,
 //	while the set_xxx methods are called from within the 
 //	gui thread, so some locking is added
 //
-//	Any change in the selected service will only be active
-//	during te next process_mscBlock call.
+
 void	mscHandler::process_mscBlock	(std::vector<int16_t> fbits,
 	                                 int16_t blkno) { 
 int16_t	currentblk;
-int16_t	i;
 
 	currentblk	= (blkno - 4) % numberofblocksperCIF;
 //	and the normal operation is:
 	memcpy (&cifVector [currentblk * BitsperBlock],
-	                    fbits. data (), BitsperBlock * sizeof (int16_t));
+	                    fbits. data(), BitsperBlock * sizeof (int16_t));
 	if (currentblk < numberofblocksperCIF - 1) 
 	   return;
 
-	if (!work_to_be_done. load ())
+	if (!work_to_be_done. load())
 	   return;
 
 //	OK, now we have a full CIF and it seems there is some work to
@@ -227,7 +230,5 @@ int16_t	i;
 	      (void) b -> process (temp, Length * CUSize);
 	   }
 	}
-	locker. unlock ();
+	locker. unlock();
 }
-//
-

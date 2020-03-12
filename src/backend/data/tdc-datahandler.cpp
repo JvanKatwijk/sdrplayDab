@@ -33,7 +33,7 @@
 	         myRadioInterface, SLOT (handle_tdcdata (int, int)));
 }
 
-	tdc_dataHandler::~tdc_dataHandler (void) {
+	tdc_dataHandler::~tdc_dataHandler() {
 }
 
 #define	swap(a)	(((a) << 8) | ((a) >> 8))
@@ -41,9 +41,9 @@
 //---------------------------------------------------------------------------
 uint16_t usCalculCRC (uint8_t *buf, int lg) {
 uint16_t crc;
-uint	count;
+int	count;
 	crc = 0xFFFF;
-	for (count= 0; count < lg; count++) {
+	for (count = 0; count < lg; count++) {
 	   crc = (uint16_t) (swap (crc) ^ (uint16_t)buf [count]);
 	   crc ^= ((uint8_t)crc) >> 4;
 	   crc = (uint16_t)
@@ -54,10 +54,9 @@ uint	count;
 
 void	tdc_dataHandler::add_mscDatagroup (std::vector<uint8_t> m) {
 int32_t	offset	= 0;
-uint8_t	*data	= (uint8_t *)(m. data ());
-int32_t	size	= m. size ();
+uint8_t	*data	= (uint8_t *)(m. data());
+int32_t	size	= m. size();
 int16_t	i;
-uint16_t	crc;
 
 //	we maintain offsets in bits, the "m" array has one bit per byte
 	while (offset < size) {
@@ -75,6 +74,8 @@ uint16_t	crc;
 	   uint16_t syncword	= getBits (data, offset,      16);
 	   int16_t length	= getBits (data, offset + 16, 16);
 	   uint16_t crc		= getBits (data, offset + 32, 16);
+
+	   (void)crc;
 	   uint8_t frametypeIndicator =
 	                          getBits (data, offset + 48,  8);
 	   if ((length < 0) || (length >= (size - offset) / 8))
@@ -93,16 +94,14 @@ uint16_t	crc;
 	   int size = length < 11 ? length : 11;
 	   for (i = 0; i < size; i ++)
 	      checkVector [5 + i] = getBits (data,  offset + 7 * 8 + i * 8, 8);
-	   checkVector [5 + length] = getBits (data, offset + 4 * 8, 8);
-	   checkVector [5 + length + 1] =
-	                                 getBits (data, offset + 5 * 8, 8);
-	   if (check_crc_bytes (checkVector, 5 + length + 2) != 0) {
+	   checkVector [5 + size]	= getBits (data, offset + 4 * 8, 8);
+	   checkVector [5 + size + 1]	= getBits (data, offset + 5 * 8, 8);
+	   if (!check_crc_bytes (checkVector, 5 + size)) {
 	      fprintf (stderr, "crc failed\n");
 	      return;
 	   }
 
-	   fprintf (stderr, "handling tdc frametype %d\n", frametypeIndicator);
-	   if (frametypeIndicator == 0)
+	   if (frametypeIndicator == 0) 
 	      offset = handleFrame_type_0 (data, offset + 7 * 8, length);
 	   else
 	   if (frametypeIndicator == 1)
@@ -113,15 +112,21 @@ uint16_t	crc;
 }
 
 int32_t	tdc_dataHandler::handleFrame_type_0 (uint8_t *data,
-	                                    int32_t offset, int32_t length) {
+	                                     int32_t offset, int32_t length) {
 int16_t i;
 int16_t noS	= getBits (data, offset, 8);
 uint8_t buffer [length];
-
-        for (i = 0; i < length; i ++)
-           buffer [i] = getBits (data, offset + i * 8, 8);
+	
+	for (i = 0; i < length; i ++)
+	   buffer [i] = getBits (data, offset + i * 8, 8);
+	if (!check_crc_bytes (buffer, length - 2))
+	   fprintf (stderr, "crc ook hier fout\n");
+#if 0
+	fprintf (stderr, "nrServices %d, SID-A %d SID-B %d SID-C %d\n",
+	                  buffer [0], buffer [1], buffer [2], buffer [3]);
+#endif
 	dataBuffer -> putDataIntoBuffer (buffer, length);
-        bytesOut (0, length);
+	bytesOut (0, length);
 	return offset + length * 8;
 }
 
@@ -130,18 +135,36 @@ int32_t	tdc_dataHandler::handleFrame_type_1 (uint8_t *data,
 	                                     int32_t length) {
 int16_t i;
 uint8_t buffer [length];
-
-  fprintf (stderr, " frametype 1 met %o %o %o\n",
-                                     getBits (data, offset,      8),
-                                     getBits (data, offset + 8,  8),
-                                     getBits (data, offset + 16, 8));
-
-        fprintf (stderr, "encryption %d\n", getBits (data, offset + 24, 8));
-
-        for (i = 0; i < length; i ++)
-           buffer [i] = getBits (data, offset + i * 8, 8);
+int	lOffset;
+int	llengths = length - 4;
+#if 0
+	fprintf (stderr, " frametype 1  (length %d) met %d %d %d\n", length,
+	                             getBits (data, offset,      8),
+	                             getBits (data, offset + 8,  8),
+	                             getBits (data, offset + 16, 8));
+	fprintf (stderr, "encryption %d\n", getBits (data, offset + 24, 8));
+#endif
+	for (i = 0; i < length; i ++)
+	   buffer [i] = getBits (data, offset + i * 8, 8);
 	dataBuffer	-> putDataIntoBuffer (buffer, length);
-        bytesOut (1, length);
+	if (getBits (data, offset + 24, 8) == 0) {	// no encryption
+	   lOffset	= offset + 4 * 8;
+	   do {
+	      int compInd	= getBits (data, lOffset, 8);	
+	      int flength	= getBits (data, lOffset + 8, 16);
+	      int crc		= getBits (data, lOffset + 3 * 8, 8);
+#if 0
+	      fprintf (stderr, "segment %d, length %d\n",
+	                                 compInd, flength);
+	      for (i = 5; i < flength; i ++)
+	         fprintf (stderr, "%c", buffer [i]);
+	      fprintf (stderr, "\n");
+#endif
+	      lOffset	+= (flength + 5) * 8;
+	      llengths -= flength + 5;
+	   } while (llengths > 10);
+	}
+	bytesOut (1, length);
 	return offset + length * 8;
 }
 //	The component header CRC is two bytes long,
@@ -159,6 +182,7 @@ int16_t	i;
 int16_t	length	= getBits (data, offset + 8, 16);
 int16_t	size	= length < 13 ? length : 13;
 uint16_t	crc;
+
 	if (length < 0)
 	   return false;		// assumed garbage
 	crc	= getBits (data, offset + 24, 16); 	// the crc

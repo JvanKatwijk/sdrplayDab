@@ -222,6 +222,7 @@ struct quantizer_spec quantizer_table [17] = {
 	mp2Processor::mp2Processor (RadioInterface	*mr,
 	                            int16_t		bitRate,
 	                            RingBuffer<int16_t> *buffer,
+	                            RingBuffer<uint8_t> *frameBuffer,
 	                            QString		picturesPath):
 	                                my_padhandler (mr, picturesPath) {
 int16_t	i, j;
@@ -260,7 +261,7 @@ int16_t *nPtr = &N [0][0];
 	errorFrames	= 0;
 }
 
-	mp2Processor::~mp2Processor (void) {
+	mp2Processor::~mp2Processor() {
 	delete[] MP2frame;
 }
 //
@@ -296,10 +297,11 @@ int32_t	mp2Processor::mp2sampleRate	(uint8_t *frame) {
 // DECODE HELPER FUNCTIONS                                                    //
 ////////////////////////////////////////////////////////////////////////////////
 
-struct quantizer_spec* mp2Processor::read_allocation(int sb, int b2_table) {
-    int table_idx = quant_lut_step3[b2_table][sb];
-    table_idx = quant_lut_step4[table_idx & 15][get_bits(table_idx >> 4)];
-    return table_idx ? (&quantizer_table[table_idx - 1]) : 0;
+struct quantizer_spec*
+	mp2Processor::read_allocation (int sb, int b2_table) {
+int table_idx = quant_lut_step3 [b2_table][sb];
+    table_idx = quant_lut_step4 [table_idx & 15] [get_bits(table_idx >> 4)];
+    return table_idx ? (&quantizer_table[table_idx - 1]) : nullptr;
 }
 
 
@@ -326,13 +328,13 @@ register int val;
 	adj = q -> nlevels;
 	if (q -> grouping) { // decode grouped samples
 	   val = get_bits (q -> cw_bits);
-	   sample[0] = val % adj;
+	   sample [0] = val % adj;
 	   val /= adj;
-	   sample[1] = val % adj;
-	   sample[2] = val / adj;
+	   sample [1] = val % adj;
+	   sample [2] = val / adj;
 	} else { // decode direct samples
 	   for (idx = 0;  idx < 3;  ++idx)
-	      sample[idx] = get_bits(q->cw_bits);
+	      sample [idx] = get_bits (q -> cw_bits);
 	}
 
 	// postmultiply samples
@@ -435,7 +437,7 @@ int32_t table_idx;
 // compute the frame size
 	frame_size = (144000 * bitrates[bit_rate_index_minus1]
 	   / sample_rates [sampling_frequency]) + padding_bit;
-	
+
 	if (!pcm)
 	   return frame_size;  // no decoding
 
@@ -459,7 +461,7 @@ int32_t table_idx;
 	// read the allocation information
 	for (sb = 0; sb < bound; ++sb)
 	   for (ch = 0; ch < 2; ++ch)
-	      allocation[ch][sb] = read_allocation(sb, table_idx);
+	      allocation [ch][sb] = read_allocation(sb, table_idx);
 
 	for (sb = bound;  sb < sblimit;  ++sb)
 	   allocation[0][sb] =
@@ -586,6 +588,9 @@ int16_t	amount	= MP2framesize;
 uint8_t	help [24 * bitRate / 8];
 int16_t	vLength	= 24 * bitRate / 8;
 
+//fprintf (stderr, "baudrate = %d, inputsize = %d\n",
+//	          baudRate, v. size ());
+//	fprintf (stderr, "\n");
 	for (i = 0; i < 24 * bitRate / 8; i ++) {
 	   help [i] = 0;
 	   for (j = 0; j < 8; j ++) {

@@ -1,6 +1,6 @@
 #
 /*
- *    Copyright (C) 2013
+ *    Copyright (C) 2013 .. 2019
  *    Jan van Katwijk (J.vanKatwijk@gmail.com)
  *    Lazy Chair Computing
  *
@@ -26,8 +26,8 @@
         faadDecoder::faadDecoder        (RadioInterface *mr,
                                          RingBuffer<int16_t> *buffer) {
         this    -> audioBuffer  = buffer;
-        aacCap          = NeAACDecGetCapabilities       ();
-        aacHandle       = NeAACDecOpen                  ();
+        aacCap          = NeAACDecGetCapabilities();
+        aacHandle       = NeAACDecOpen();
         aacConf         = NeAACDecGetCurrentConfiguration (aacHandle);
         aacInitialized  = false;
         baudRate        = 48000;
@@ -35,7 +35,7 @@
                  mr, SLOT (newAudio (int, int)));
 }
 
-        faadDecoder::~faadDecoder       (void) {
+        faadDecoder::~faadDecoder() {
         NeAACDecClose   (aacHandle);
 }
 
@@ -54,10 +54,7 @@ int get_aac_channel_configuration (int16_t m_mpeg_surround_config,
         }
 }
 
-bool    faadDecoder::initialize (uint8_t        dacRate,
-                                 uint8_t        sbrFlag,
-                                 int16_t        mpegSurround,
-                                 uint8_t        aacChannelMode) {
+bool    faadDecoder::initialize (stream_parms	*sp) {
 long unsigned int sample_rate;
 uint8_t channels;
 /* AudioSpecificConfig structure (the only way to select 960 transform here!)
@@ -78,19 +75,20 @@ uint8_t channels;
  */
 
         int core_sr_index =
-                     dacRate ? (sbrFlag ? 6 : 3) :
-                               (sbrFlag ? 8 : 5);   // 24/48/16/32 kHz
-        int core_ch_config = get_aac_channel_configuration (mpegSurround,
-                                                            aacChannelMode);
+               sp -> dacRate ? (sp -> sbrFlag ? 6 : 3) :
+                               (sp -> sbrFlag ? 8 : 5);   // 24/48/16/32 kHz
+        int core_ch_config =
+	           get_aac_channel_configuration (sp -> mpegSurround,
+                                                  sp ->aacChannelMode);
         if (core_ch_config == -1) {
            printf ("Unrecognized mpeg surround config (ignored): %d\n",
-                                               mpegSurround);
+                                               sp -> mpegSurround);
            return false;
         }
 
         uint8_t asc[2];
-        asc[0] = 0b00010 << 3 | core_sr_index >> 1;
-        asc[1] = (core_sr_index & 0x01) << 7 | core_ch_config << 3 | 0b100;
+        asc [0] = 0b00010 << 3 | core_sr_index >> 1;
+	asc [1] = (core_sr_index & 0x01) << 7 | core_ch_config << 3 | 0b100;
 	long int init_result = NeAACDecInit2 (aacHandle,
                                               asc,
                                               sizeof (asc),
@@ -106,10 +104,7 @@ uint8_t channels;
         return true;
 }
 
-int16_t faadDecoder::MP42PCM (uint8_t   dacRate,
-                              uint8_t   sbrFlag,
-                              int16_t   mpegSurround,
-                              uint8_t   aacChannelMode,
+int16_t faadDecoder::MP42PCM (stream_parms *sp,
                               uint8_t   buffer [],
                               int16_t   bufferLength) {
 int16_t samples;
@@ -119,7 +114,7 @@ NeAACDecFrameInfo       hInfo;
 uint8_t channels;
 
         if (!aacInitialized) {
-           if (!initialize (dacRate, sbrFlag, mpegSurround, aacChannelMode))
+           if (!initialize (sp))
               return 0;
            aacInitialized = true;
         }
@@ -145,13 +140,13 @@ uint8_t channels;
         if (hInfo. error != 0) {
            fprintf (stderr, "Warning: %s\n",
                        faacDecGetErrorMessage (hInfo. error));
-           return 0;
-    }
+           return -1;
+	}
 
         if (channels == 2) {
            audioBuffer  -> putDataIntoBuffer (outBuffer, samples);
-	   if (audioBuffer -> GetRingBufferReadAvailable () > sampleRate / 8)
-              newAudio (samples, sampleRate);
+	   if (audioBuffer -> GetRingBufferReadAvailable() > (int)sampleRate / 8)
+              newAudio (sampleRate / 10, sampleRate);
         }
         else
         if (channels == 1) {
@@ -162,12 +157,12 @@ uint8_t channels;
               buffer [2 * i + 1] = buffer [2 * i];
            }
            audioBuffer  -> putDataIntoBuffer (buffer, samples);
-	   if (audioBuffer -> GetRingBufferReadAvailable () > sampleRate / 8)
+	   if (audioBuffer -> GetRingBufferReadAvailable() > (int)sampleRate / 8)
               newAudio (samples, sampleRate);
         }
         else
            fprintf (stderr, "Cannot handle these channels\n");
 
-        return samples;
+        return channels; 
 }
 

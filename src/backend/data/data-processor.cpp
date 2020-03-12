@@ -48,7 +48,8 @@
 	this	-> expectedIndex	= 0;
 	switch (DSCTy) {
 	   default:
-	      my_dataHandler	= new virtual_dataHandler ();
+	      fprintf (stderr, "DSCTy %d not supported\n", DSCTy);
+	      my_dataHandler	= new virtual_dataHandler();
 	      break;
 
 	   case 5:			
@@ -56,7 +57,7 @@
 	      break;
 
 	   case 44:
-	      my_dataHandler	= new journaline_dataHandler ();
+	      my_dataHandler	= new journaline_dataHandler();
 	      break;
 
 	   case 59:
@@ -66,23 +67,25 @@
 	   case 60:
 	      my_dataHandler	= new motHandler (mr, picturesPath);
 	      break;
+	   
 	}
 
 	packetState	= 0;
 }
 
-	dataProcessor::~dataProcessor	(void) {
+	dataProcessor::~dataProcessor() {
 	delete		my_dataHandler;
 }
+
 
 void	dataProcessor::addtoFrame (std::vector<uint8_t> outV) {
 //	There is - obviously - some exception, that is
 //	when the DG flag is on and there are no datagroups for DSCTy5
 	   if ((this -> DSCTy == 5) &&
 	       (this -> DGflag))	// no datagroups
-	      handleTDCAsyncstream (outV. data (), 24 * bitRate);
+	      handleTDCAsyncstream (outV. data(), 24 * bitRate);
 	   else
-	      handlePackets (outV. data (), 24 * bitRate);
+	      handlePackets (outV. data(), 24 * bitRate);
 }
 //
 //	While for a full mix data and audio there will be a single packet in a
@@ -112,7 +115,6 @@ int16_t	firstLast	= getBits_2 (data, 4);
 int16_t	address		= getBits   (data, 6, 10);
 uint16_t command	= getBits_1 (data, 16);
 int32_t	usefulLength	= getBits_7 (data, 17);
-int32_t	i;
 //	if (usefulLength > 0)
 //	      fprintf (stderr, "CI = %d, address = %d, usefulLength = %d\n",
 //	                       continuityIndex, address, usefulLength);
@@ -132,8 +134,8 @@ int32_t	i;
 	if (address == 0)
 	   return;		// padding packet
 //
-	if (packetAddress != address)	// sorry
-	   return;
+//	if (packetAddress != address)	// sorry
+//	   return;
 	
 //	assemble the full MSC datagroup
 
@@ -141,13 +143,13 @@ int32_t	i;
 	   if (firstLast == 02) {	// first packet
 	      packetState = 1;
 	      series. resize (usefulLength * 8);
-	      for (i = 0; i < series. size (); i ++)
+	      for (uint16_t i = 0; i < series. size(); i ++)
 	         series [i] = data [24 + i];
 	   }
 	   else
 	   if (firstLast == 03) {	// single packet, mostly padding
 	      series. resize (usefulLength * 8);
-	      for (i = 0; i < series. size (); i ++)
+	      for (uint16_t i = 0; i < series. size(); i ++)
 	         series [i] = data [24 + i];
 	      my_dataHandler	-> add_mscDatagroup (series);
 	   }
@@ -157,16 +159,16 @@ int32_t	i;
 	else
 	if (packetState == 01) {	// within a series
 	   if (firstLast == 0) {	// intermediate packet
-	      int32_t currentLength = series. size ();
+	      int32_t currentLength = series. size();
 	      series. resize (currentLength + 8 * usefulLength);
-	      for (i = 0; i < 8 * usefulLength; i ++)
+	      for (uint16_t i = 0; i < 8 * usefulLength; i ++)
 	         series [currentLength + i] = data [24 + i];
 	   }
 	   else
 	   if (firstLast == 01) {	// last packet
-	      int32_t currentLength = series. size ();
+	      int32_t currentLength = series. size();
 	      series. resize (currentLength + 8 * usefulLength);
-	      for (i = 0; i < 8 * usefulLength; i ++)
+	      for (uint16_t i = 0; i < 8 * usefulLength; i ++)
 	         series [currentLength + i] = data [24 + i];
 
 	      my_dataHandler	-> add_mscDatagroup (series);
@@ -176,7 +178,7 @@ int32_t	i;
 	   if (firstLast == 02) {	// first packet, previous one erroneous
 	      packetState = 1;
 	      series. resize (usefulLength * 8);
-	      for (i = 0; i < series. size (); i ++)
+	      for (uint16_t i = 0; i < series. size(); i ++)
 	         series [i] = data [24 + i];
 	   }
 	   else {
