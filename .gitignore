@@ -1,4 +1,7 @@
 Makefile
 linux-bin
 .qmake.stash
+Output
+build
+
 

@@ -181,7 +181,7 @@ uint8_t	dabBand;
 	normalScan	= dabSettings -> value ("normalScan", 0). toInt () == 1;
 //	The settings are done, now creation of the GUI parts
 	setupUi (this);
-//
+
 	dataDisplay	= new QFrame (nullptr);
 	techData. setupUi (dataDisplay);
 
@@ -749,15 +749,16 @@ void	RadioInterface::TerminateProcess() {
 	}
 
 	if (inputDevice != nullptr) 
-	   inputDevice		-> stopReader();	// might be concurrent
+	   inputDevice		-> stopReader ();	// might be concurrent
 	if (my_dabProcessor != nullptr)
-	   my_dabProcessor	-> stop();		// definitely concurrent
+	   my_dabProcessor	-> stop();		
 
 	delete my_history;
 	if (currentService != nullptr)
 	   delete currentService;
 	currentService	= nullptr;
 	soundOut		-> stop();
+	fprintf (stderr, "audio deleted\n");
 	dataDisplay		->  hide();
 //	everything should be halted by now
 	dumpControlState (dabSettings);
@@ -765,7 +766,6 @@ void	RadioInterface::TerminateProcess() {
 	if (inputDevice != nullptr)
 	   delete		inputDevice;
 	fprintf (stderr, "going to delete dabProcessor\n");
-
 	delete		my_dabProcessor;
 	fprintf (stderr, "deleted dabProcessor\n");
 	delete	dataDisplay;
@@ -1322,6 +1322,8 @@ void RadioInterface::closeEvent (QCloseEvent *event) {
 }
 
 bool	RadioInterface::eventFilter (QObject *obj, QEvent *event) {
+	if (!running. load ())
+	   return QWidget::eventFilter (obj, event);
 	if (event -> type () == QEvent::KeyPress) {
 	   QKeyEvent *ke = static_cast <QKeyEvent *> (event);
 	   if (ke -> key () == Qt::Key_Return) {

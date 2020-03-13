@@ -16,9 +16,6 @@ sdrplayDab-3.3
 * [Comment on some settings](#comment-on-some-settings)
 * [Obsolete properties](#Obsolete-properties)
 * [Installation](#features)
-  * [Windows](#windows)
-  * [Ubuntu Linux](#ubuntu-linux)
-  * [Raspberry PI](#raspberry-pi)
 * [Copyright](#copyright)
 
 -------------------------------------------------------------------

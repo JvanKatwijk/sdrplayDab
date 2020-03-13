@@ -1,6 +1,6 @@
 #
 /*
- *    Copyright (C) 2014 .. 2017
+ *    Copyright (C) 2017 2020
  *    Jan van Katwijk (J.vanKatwijk@gmail.com)
  *    Lazy Chair Computing
  *
@@ -68,6 +68,7 @@ sdrplaySelect	*sdrplaySelector;
 	sdrplaySettings		= s;
 	this	-> base		= base;
 	this	-> myFrame	= new QFrame (NULL);
+	this	-> checker	= myFrame;
 	setupUi (this -> myFrame);
 	this	-> myFrame	-> show ();
 	antennaSelector		-> hide ();
@@ -223,7 +224,6 @@ sdrplaySelect	*sdrplaySelector;
 }
 
 	sdrplayHandler::~sdrplayHandler	(void) {
-	fprintf (stderr, "going to delete\n");
 	stopReader ();
 	sdrplaySettings	-> beginGroup ("sdrplaySettings");
 	sdrplaySettings -> setValue ("sdrplay-ppm", ppmControl -> value ());
@@ -260,6 +260,14 @@ mir_sdr_ErrT err;
 	freq_errorDisplay	-> display (offset);
 }
 
+static inline
+int	constrain (int v, int l, int h) {
+	if (v < l)
+	   return l;
+	if (v > h)
+	   return h;
+}
+
 void	sdrplayHandler::setGains	(float lowVal, float highVal) {
 mir_sdr_GainValuesT gains;
 mir_sdr_ErrT err = mir_sdr_GetCurrentGain (&gains);
@@ -274,19 +282,10 @@ mir_sdr_ErrT err = mir_sdr_GetCurrentGain (&gains);
 //	we compute the "error" in the gain setting,
 //	and we derive the GRdB value needed to correct that
 	int gainCorr	= gain_setpoint -> value () - str;
+	gainCorr 	= constrain (gainCorr, -20, 20);
 
-	if (gainCorr < - 20)
-	   gainCorr = -20;
-	if (gainCorr > 20)
-	   gainCorr = 20;
 	int GRdB	= gains. curr - get_lnaGRdB (hwVersion, lnaState);
-	if (GRdB + gainCorr < 20)
-	   GRdB = 20;
-	else
-	if (GRdB + gainCorr > 59)
-	   GRdB = 59;
-	else
-	   GRdB = GRdB + gainCorr;
+	GRdB		= constrain (GRdB + gainCorr, 20, 59);
 
 	if ((GRdB != 0) && (!agcControl -> isChecked ())) {
 	   err = mir_sdr_RSP_SetGr (GRdB, lnaState, 1 , 0);
@@ -395,7 +394,7 @@ mir_sdr_ErrT	err;
 	           
 	         int	offset;
 	         float	lowVal, highVal;
-	         if (++ teller > 100) {
+	         if (++ teller > 50) {
 	            p -> base -> update_data (&offset, &lowVal, &highVal);
 	            p -> setOffset (offset);
 	            p -> setGains  (lowVal, highVal);
@@ -405,8 +404,8 @@ mir_sdr_ErrT	err;
 	      continue;
 	   
 	   case INITIAL_STRENGTH: {
-	      float str	= 10 * log10 ((p -> base -> initialSignal () + 0.005) / denominator);
-	      p -> set_initialGain (str);
+	         float str = 10 * log10 ((p -> base -> initialSignal () + 0.005) / denominator);
+	         p -> set_initialGain (str);
 	      }
 	      continue;
 	   }
@@ -491,6 +490,7 @@ mir_sdr_ErrT err;
 	   fprintf (stderr, "error = %s\n",
 	                errorCodes (err). toLatin1 (). data ());
 	running. store (false);
+	fprintf (stderr, "stopReader passed\n");
 }
 
 int32_t	sdrplayHandler::getVFOFrequency	(void) {

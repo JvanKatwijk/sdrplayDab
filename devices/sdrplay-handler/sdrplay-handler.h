@@ -86,6 +86,7 @@ private:
 	int16_t		deviceIndex;
 	QSettings	*sdrplaySettings;
 	QFrame		*myFrame;
+	QFrame		*checker;
 	int32_t		inputRate;
 	int32_t		vfoFrequency;
 	int32_t		totalOffset;

@@ -2,10 +2,10 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "sdrplayDab"
-#define MyAppVersion "2.1"
+#define MyAppVersion "3.3"
 #define MyAppPublisher "Lazy Chair Computing"
 #define MyAppURL "https://github.com/JvanKatwijk/sdrplayDab"
-#define MyAppExeName "sdrplay-dab-2.1.exe";
+#define MyAppExeName "sdrplayDab-3.3.exe";
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -34,7 +34,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "D:\sdr-j-development\windows-sdrplay\sdrplay-dab-2.1.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "D:\sdr-j-development\windows-sdrplay\sdrplayDab-3.3.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "D:\sdr-j-development\windows-sdrplay\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "C:\Users\JvanK\Downloads\SDRplay_RSP_API-Windows-2.13.1.exe"; DestDir: "{app}"; AfterInstall : install_sdrplayApi
 

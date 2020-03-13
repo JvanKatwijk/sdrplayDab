@@ -9,6 +9,8 @@
    sudo apt-get install libgl1-mesa-dev libqt5opengl5-dev
    sudo apt-get install libsamplerate0-dev libqwt-qt5-dev
    sudo apt-get install qtbase5-dev
+#	download the appropriate 2.13 library for support of the sdrplay on the
+#	selected hardware
 #   git clone https://github.com/JvanKatwijk/qt-dab.git
    cd qt-dab
    qmake qt-dab.pro
