@@ -47,7 +47,7 @@ SF_INFO *sf_info;
 	this	-> base	= base;
 	myFrame		= new QFrame;
 	setupUi (myFrame);
-
+	myFrame	-> show ();
 	readerOK	= false;
 	_I_Buffer	= new RingBuffer<std::complex<float>>(__BUFFERSIZE);
 
@@ -68,10 +68,18 @@ SF_INFO *sf_info;
 	   delete myFrame;
 	   throw (25);
 	}
+
 	nameofFile	-> setText (f);
 	readerOK	= true;
 	readerPausing	= true;
 	currPos		= 0;
+	oscillatorTable	= new std::complex<float> [2048000];
+	for (int i = 0; i < INPUT_RATE; i ++)
+           oscillatorTable [i] = std::complex<float>
+                                    (cos (2.0 * M_PI * i / 2048000),
+                                     sin (2.0 * M_PI * i / 2048000));
+	currentPhase	= 0;
+	phaseOffset	= 0;
 }
 
 	wavFiles::~wavFiles (void) {
@@ -83,6 +91,7 @@ SF_INFO *sf_info;
 	}
 	delete _I_Buffer;
 	delete	myFrame;
+	delete oscillatorTable;
 }
 
 bool	wavFiles::restartReader	(int frequency) {
@@ -106,6 +115,7 @@ int64_t	period;
 int64_t	nextStop;
 int64_t	fileLength;
 int	teller		= 0;
+int	teller_u	= 0;
 
 	if (!readerOK)
 	   return;
@@ -128,6 +138,7 @@ int	teller		= 0;
 	      nextStop = getMyTime ();
 	      continue;
 	   }
+
 	   while (_I_Buffer -> WriteSpace () < bufferSize) {
 	      if (ExitCondition)
 	         break;
@@ -149,9 +160,28 @@ int	teller		= 0;
 	          bi [i] = 0;
 	      t = bufferSize;
 	   }
+
+	   for (i = 0; i < bufferSize; i ++) {
+	      int res = base -> addSymbol (bi [i]);
+	      switch (res) {
+	         default:
+	         case GO_ON:
+	            continue;
 	
-	   for (i = 0; i < bufferSize; i ++)
-	      base -> addSymbol (bi [i]);
+	         case DEVICE_UPDATE: {
+	            int offset;
+	            float lowVal, highVal;
+	            teller_u ++;
+	            if (teller_u >= 100) {
+	               base -> update_data (&offset, &lowVal, &highVal);
+	               setOffset (offset);
+	               setGains  (lowVal, highVal);
+	               teller_u = 0;
+	            }
+	         }
+	         continue;
+	      }
+	   }
 
 	   if (nextStop - getMyTime () > 0)
 	      usleep (nextStop - getMyTime ());
@@ -171,8 +201,12 @@ float	temp [2 * length];
 	   fprintf (stderr, "End of file, restarting\n");
 	}
 
-	for (i = 0; i < n; i ++)
+	for (i = 0; i < n; i ++) {
 	   data [i] = std::complex<float> (temp [2 * i], temp [2 * i + 1]);
+	   data [i] *= oscillatorTable [currentPhase];
+	   currentPhase -= phaseOffset;
+	   currentPhase = (currentPhase + 2048000) % 2048000;
+	}
 	return	n & ~01;
 }
 
@@ -186,5 +220,17 @@ void	wavFiles::hide		(void) {
 
 bool	wavFiles::isHidden	(void) {
 	return !myFrame	-> isVisible ();
+}
+
+void	wavFiles::setOffset	(int offset) {
+	if (offset != 0) 
+	   phaseOffset += offset;
+	freq_offsetDisplay	-> display (phaseOffset);
+	freq_errorDisplay	-> display (offset);
+}
+
+void	wavFiles::setGains	(float lowVal, float highVal) {
+	averageValue	-> display (10 * log10 (highVal /2048.0));
+	nullValue	-> display (10 * log10 (lowVal / 2048.0));
 }
 

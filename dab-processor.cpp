@@ -122,8 +122,8 @@ int32_t	i;
         localCounter            = 0;
 
 
-	connect (this, SIGNAL (show_snr (int)),
-	         myRadioInterface, SLOT (show_snr (int)));
+	connect (this, SIGNAL (show_snr (float, float)),
+	         myRadioInterface, SLOT (show_snr (float, float)));
 	connect (this, SIGNAL (setSynced (bool)),
 	         myRadioInterface, SLOT (setSynced (bool)));
 	connect (this, SIGNAL (set_freqOffset (int)),
@@ -496,8 +496,8 @@ int	result	= coarseOffset + fineOffset;
 	*freq		= result;
 	*dip		= dipValue;
 	*firstSymb	= avgSignalValue;
-	show_snr (10 * log10 (avgSignalValue / 2048.0) -
-	                             10 * log10 (dipValue / 2048.0));
+	
+	show_snr (avgSignalValue, dipValue);
 }
 
 float	dabProcessor::initialSignal	(void) {

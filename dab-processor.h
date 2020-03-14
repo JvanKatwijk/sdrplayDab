@@ -176,7 +176,7 @@ signals:
 	void		show_Spectrum		(int);
 	void		set_freqOffset		(int);
 	void		show_tii		(QByteArray);
-	void		show_snr		(int);
+	void		show_snr		(float, float);
 };
 #endif
 

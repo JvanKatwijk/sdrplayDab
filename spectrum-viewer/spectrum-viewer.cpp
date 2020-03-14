@@ -53,6 +53,7 @@ QColor	curveColor;
 	this	-> myFrame		= new QFrame (nullptr);
 	setupUi (this -> myFrame);
 
+	normalizer			= 4096;
 	this	-> myFrame	-> hide();
 	displayBuffer. resize (displaySize);
 	memset (displayBuffer. data(), 0, displaySize * sizeof (double));

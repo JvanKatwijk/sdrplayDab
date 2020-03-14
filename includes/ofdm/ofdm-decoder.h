@@ -72,11 +72,8 @@ private:
 	std::vector<int16_t>		ibits;
 	std::complex<float>	*fft_buffer;
 	phaseTable	*phasetable;
-	int16_t		snrCount;
-	int16_t		snr;
 
 signals:
-	void		show_snr	(int);
 	void		showIQ		(int);
 	void		showQuality	(float);
 };

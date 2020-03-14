@@ -403,7 +403,7 @@ uint8_t	dabBand;
 	secondariesVector. resize (0);
 	startChannel (channelSelector -> currentText ());
 	connectGUI ();
-	showButtons ();
+//	showButtons ();
 	running. store (true);
 }
 
@@ -888,9 +888,21 @@ void	RadioInterface::show_motHandling (bool b) {
 }
 	
 //	called from the ofdmDecoder, it is computed for each frame
-void	RadioInterface::show_snr (int s) {
-	if (running. load())
-	   snrDisplay	-> display (s);
+static  inline
+int16_t valueFor (int16_t b) {
+int16_t res     = 1;
+        while (--b > 0)
+           res <<= 1;
+        return res;
+}
+
+void	RadioInterface::show_snr (float avgSignal, float avgDip) {
+	if (running. load ()) {
+	   int nrBits = inputDevice -> bitDepth ();
+	   int snr	= 10 * (log10 (avgSignal / valueFor (nrBits)) -
+	                        log10 (avgDip / valueFor (nrBits)));
+	   snrDisplay	-> display (snr);
+	}
 }
 
 //	just switch a color, called from the ofdmprocessor
@@ -1550,7 +1562,7 @@ QString serviceName	= s -> serviceName;
 	      if (my_dabProcessor -> is_packetService (serviceName))
 	         start_packetService (serviceName);
 	      else
-	         fprintf (stderr, "%s is not clear\n",
+	         fprintf (stderr, "%s: not clear what service is\n",
 	                            serviceName. toLatin1 (). data ());
 	      return;
 	   }
