@@ -50,7 +50,11 @@
 #else
 #include	"audiosink.h"
 #endif
+#ifdef	SDRPLAY_V2
 #include	"sdrplay-handler.h"
+#else
+#include	"sdrplay-handler-v3.h"
+#endif
 #include	"ui_technical_data.h"
 #include	"spectrum-viewer.h"
 #include	"correlation-viewer.h"
@@ -346,14 +350,23 @@ uint8_t	dabBand;
 //
 //	The input device talks to the dabProcessor
 	inputDevice     = nullptr;
-        try {
-           inputDevice  =
+#ifdef	SDRPLAY_V2
+	try {
+	   inputDevice  =
 	          new sdrplayHandler (this, dabSettings, my_dabProcessor);
-        }
-        catch (int e) {
-           fprintf (stderr, "no sdrplay device, trying to open a file\n");
-        }
-
+	}
+	catch (int e) {
+	   fprintf (stderr, "no sdrplay device, trying to open a file\n");
+	}
+#else
+	try {
+	   inputDevice  =
+	        new sdrplayHandler_v3 (this, dabSettings, my_dabProcessor);
+	}
+	catch (int e) {
+	   fprintf (stderr, "no sdrplay device, trying to open a file\n");
+	}
+#endif
 	if (inputDevice == nullptr) {
 	   try {
 	      QString file = QFileDialog::getOpenFileName (this,

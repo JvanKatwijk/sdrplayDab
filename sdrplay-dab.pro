@@ -10,11 +10,11 @@ QT		+= widgets xml
 #CONFIG		+= console
 CONFIG		-= console
 QMAKE_CXXFLAGS	+= -std=c++11
-#QMAKE_CFLAGS	+=  -flto -ffast-math
-#MAKE_CXXFLAGS	+=  -flto -ffast-math
-QMAKE_CFLAGS	+=  -g
-QMAKE_CXXFLAGS	+=  -g
-QMAKE_LFLAGS	+=  -g
+QMAKE_CFLAGS	+=  -flto -ffast-math
+MAKE_CXXFLAGS	+=  -flto -ffast-math
+#QMAKE_CFLAGS	+=  -g
+#QMAKE_CXXFLAGS	+=  -g
+#QMAKE_LFLAGS	+=  -g
 QMAKE_CXXFLAGS += -isystem $$[QT_INSTALL_HEADERS]
 RC_ICONS	=  sdrplay-dab.ico
 RESOURCES	+= resources.qrc
@@ -47,7 +47,6 @@ DEPENDPATH += . \
 	      ./includes/support \
 	      ./devices \
 	      ./devices/wavfiles \
-	      ./devices/sdrplay-handler \
 	      ./includes/scopes-qwt6 \
               ./spectrum-viewer \
 	      ./correlation-viewer \
@@ -71,7 +70,6 @@ INCLUDEPATH += . \
 	      ./includes/support/viterbi-spiral \
 	      ./devices \
 	      ./devices/wavfiles \
-	      ./devices/sdrplay-handler \
 	      ./includes/scopes-qwt6 \
               ./spectrum-viewer \
 	      ./correlation-viewer \
@@ -85,8 +83,6 @@ HEADERS += ./radio.h \
 	   ./service-description/data-descriptor.h \
 	   ./devices/device-handler.h \
            ./devices/wavfiles/wavfiles.h \
-           ./devices/sdrplay-handler/sdrplay-handler.h \
-           ./devices/sdrplay-handler/sdrplayselect.h \
 	   ./includes/dab-constants.h \
 	   ./includes/country-codes.h \
 	   ./includes/ofdm/ofdm-decoder.h \
@@ -168,7 +164,6 @@ FORMS	+= ./forms/data-description.ui
 FORMS	+= ./spectrum-viewer/scopewidget.ui
 FORMS	+= ./correlation-viewer/correlation-widget.ui
 FORMS	+= ./tii-viewer/tii-widget.ui
-FORMS   += ./devices/sdrplay-handler/sdrplay-widget.ui
 FORMS	+= ./devices/wavfiles/filereader-widget.ui 
 
 SOURCES += ./main.cpp \
@@ -178,8 +173,6 @@ SOURCES += ./main.cpp \
 	   ./service-description/data-descriptor.cpp \
 	   ./devices/device-handler.cpp \
 	   ./devices/wavfiles/wavfiles.cpp \
-           ./devices/sdrplay-handler/sdrplay-handler.cpp \
-           ./devices/sdrplay-handler/sdrplayselect.cpp \
 	   ./src/ofdm/ofdm-decoder.cpp \
 	   ./src/ofdm/phasereference.cpp \
 	   ./src/ofdm/phasetable.cpp \
@@ -262,9 +255,13 @@ isEmpty(GITHASHSTRING) {
 
 INCLUDEPATH	+= /usr/local/include
 INCLUDEPATH	+= /usr/local/include /usr/include/qt4/qwt /usr/include/qt5/qwt /usr/include/qt4/qwt /usr/include/qwt /usr/local/qwt-6.1.4-svn/
+#
+#	choose one of:
+CONFIG		+= sdrplay-v2
+#CONFIG		+= sdrplay-v3
+
 LIBS		+= -lfftw3f  -lfftw3 -lusb-1.0 -ldl  #
 LIBS		+= -lportaudio
-LIBS            += -lmirsdrapi-rsp
 LIBS		+= -lz
 LIBS		+= -lsndfile
 LIBS		+= -lsamplerate
@@ -324,6 +321,11 @@ LIBS		+= -L/usr/i686-w64-mingw32/sys-root/mingw/lib
 #INCLUDEPATH	+= /mingw/include
 #INCLUDEPATH	+= /mingw64/include/qwt
 #INCLUDEPATH	+= C:/msys64/mingw64/include/qwt
+
+#	choose one of:
+CONFIG		+= sdrplay-v2
+#CONFIG		+= sdrplay-v3
+
 LIBS		+= -lfftw3f -lfftw3
 LIBS		+= -lportaudio
 LIBS		+= -lsndfile
@@ -339,7 +341,6 @@ LIBS		+= -lz
 #mingw64 wants the first one, cross compiling mingw64-32 the second one
 #LIBS		+= -lqwt
 LIBS		+= -lqwt-qt5
-LIBS		+=-lmir_sdr_api
 CONFIG		+= faad
 CONFIG		+= NO_SSE
 
@@ -354,6 +355,33 @@ CONFIG		+= NO_SSE
 
 CONFIG		+= try-epg		# do not use
 DEFINES		+= PRESET_NAME
+}
+
+sdrplay-v2   	{
+DEPENDPATH	+= ./devices/sdrplay-handler-v2 
+INCLUDEPATH	+= ./devices/sdrplay-handler-v2 
+HEADERS		+= ./devices/sdrplay-handler-v2/sdrplay-handler.h \
+	           ./devices/sdrplay-handler-v2/sdrplayselect.h 
+SOURCES		+= ./devices/sdrplay-handler-v2/sdrplay-handler.cpp \
+	           ./devices/sdrplay-handler-v2/sdrplayselect.cpp 
+FORMS		+= ./devices/sdrplay-widget.ui
+LIBS            += -lmirsdrapi-rsp		// uncomment for Linux
+#LIBS		+= -lmir_sdr_api		// uncomment for windows
+DEFINES		+= SDRPLAY_V2
+}
+
+sdrplay-v3	{
+DEPEND_PATH	+= ./devices/sdrplay-handler-v3 
+INCLUDEPATH	+= ./devices/sdrplay-handler-v3 \
+	           ./devices/sdrplay-handler-v3/include 
+HEADERS		+= ./devices/sdrplay-handler-v3/sdrplay-handler-v3.h \
+	           ./devices/sdrplay-handler-v3/control-queue.h \
+	           ./devices/sdrplay-handler-v3/sdrplay-controller.h 
+SOURCES		+= ./devices/sdrplay-handler-v3/sdrplay-handler-v3.cpp \
+	           ./devices/sdrplay-handler-v3/control-queue.cpp \
+	           ./devices/sdrplay-handler-v3/sdrplay-controller.cpp
+FORMS		+= ./devices/sdrplay-widget.ui
+DEFINES		+= SDRPLAY_V3
 }
 
 send_datagram {

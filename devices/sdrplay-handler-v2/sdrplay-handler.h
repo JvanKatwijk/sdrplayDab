@@ -67,8 +67,6 @@ public:
 	void		show			(void);
 	void		hide			(void);
 	bool		isHidden		(void);
-	bool		isSDRPLAY_2		(void);
-	void		antennaSwitcher		(bool);
 //
 //	The buffer should be visible by the callback function
 	RingBuffer<std::complex<float>>	*_I_Buffer;

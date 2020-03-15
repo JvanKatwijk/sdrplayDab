@@ -610,15 +610,3 @@ void	sdrplayHandler::hide	(void) {
 bool	sdrplayHandler::isHidden	(void) {
 	return !myFrame	-> isVisible ();
 }
-
-bool	sdrplayHandler::isSDRPLAY_2	(void) {
-	return hwVersion == 2;
-}
-
-void	sdrplayHandler::antennaSwitcher	(bool b) {
-	if (!isSDRPLAY_2 ())		// should not happen
-	   return;
-	if (theSwitch == b)
-	   return;
-	theSwitch = b;
-}

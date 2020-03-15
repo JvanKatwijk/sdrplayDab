@@ -98,6 +98,9 @@ Specify in a file a list of channels, e.g.
 
 and pass the file on with the "-A" command line switch.
 
+
+Support for the 3.06 library for the RSP's of SDRplay
+
 ------------------------------------------------------------------
 Widgets and scopes
 ------------------------------------------------------------------
@@ -229,6 +232,14 @@ The installer will also call the official installer for the dll implementing the
 For Linux on the RPI a script is available that -when run - will fetch all
 required libraries and generate an executable.
 
+Select either
+	CONFIG	+= sdrplay_v2
+or
+	CONFIG	+= sdrplay_v3
+
+Note that in the current setup the library version 2 - when selected -
+is compiled in and therefore should be available.
+The library version 3 - when selected -will be loaded dynamically
 
 # Copyright
 
