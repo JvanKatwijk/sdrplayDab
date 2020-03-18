@@ -1,6 +1,6 @@
 #
 /*
- *    Copyright (C) 2014 .. 2019
+ *    Copyright (C) 2020
  *    Jan van Katwijk (J.vanKatwijk@gmail.com)
  *    Lazy Chair Computing
  *
@@ -24,33 +24,54 @@
 #define	__SDRPLAY_CONTROLLER__
 
 #include	<QThread>
+#include	<QSemaphore>
+#include	<queue>
 #include	<dab-constants.h>
 #include	<ringbuffer.h>
 #include	<sdrplay_api.h>
 class	sdrplayHandler_v3;
-class	controlQueue;
 class	dabProcessor;
-
+class	generalCommand;
 
 class	sdrplayController:public QThread {
 Q_OBJECT
 public:
 		sdrplayController (sdrplayHandler_v3 *,
-	                           controlQueue *,
-	                           dabProcessor *);
+	                           dabProcessor *, int, int, int, bool);
 		~sdrplayController	();
 	bool	is_threadRunning	();
 	bool	is_receiverRunning	();
+	bool	restartReader		(int);
+	void	stopReader		();
+	void	setVFOFrequency		(int);
+	int	getVFOFrequency		();
+	bool	set_agc			(bool, int);
+	bool	set_GRdB		(int);
+	bool	set_PPM			(int);
+	bool	set_LNA			(int);
+	bool	set_antenna		(int);
+	int	gainValue		();
+	bool	report			();
+	bool	isOK			();
+	int	get_lnaRange		();
+	QString	get_deviceLabel		();
+	int	get_nrBits		();
+	float	get_apiVersion		();
+        QString	get_serialNumber	();
+	int	get_lnaValue		(int);
+	void	set_gain		(int);
+//	some callback functions need access to:
+
 	RingBuffer<std::complex<int16_t>> *_I_Buffer;
 	int	denominator;
 	std::atomic<bool>	receiverRuns;
-	dabProcessor			*base;
-	void	update_PowerOverload (sdrplay_api_EventParamsT *params);
-	void	setOffset	(int);
-	void	setGains	(float, float);
-	void	setTotalGain	(int);
-	float	theGain;
-	int	gainSetPoint;
+	std::atomic<bool>	threadRuns;
+	dabProcessor		*base;
+	void			update_PowerOverload (
+	                                 sdrplay_api_EventParamsT *params);
+	void			setOffset       (int);
+        void			setGains        (float, float);
+	int			theGain;
 private:
 	sdrplay_api_Open_t              sdrplay_api_Open;
         sdrplay_api_Close_t             sdrplay_api_Close;
@@ -80,23 +101,31 @@ private:
         HINSTANCE			Handle;
         int16_t				hwVersion;
         int16_t				nrBits;
+	int				lna_upperBound;
+	QString				deviceLabel;
+	float				apiVersion;
+	QString				serialNumber;
 
+	int				gainSetPoint;
+	bool				has_antennaSelect;
+	bool				agcMode;
+	int				lnaState;
+	int				ppmValue;
+	bool				reportIndicator;
 	sdrplayHandler_v3		*parent;
-	controlQueue			*theQueue;
-	std::atomic<bool>		threadRuns;
+	std::queue<generalCommand *>	server_queue;
+	QSemaphore			serverjobs;
 	HINSTANCE			fetchLibrary	();
 	void				releaseLibrary	();
 	bool				loadFunctions	();
-	
 signals:
-	void				freq_offSet	(int);
-	void				freq_error	(int);
-        void				avgValue	(float);
-        void				dipValue	(float);
-	void		set_lnaRange	(int, int);
-	void		set_deviceLabel	(const QString &, int);
-	void		setDeviceData	(const QString &, int, float);
-	void		show_TotalGain	(int);
+	void		deviceReady	(bool);
+
+	void		avgValue	(float);
+	void		dipValue	(float);
+	void		show_TotalGain	(float);
+	void		freq_offset	(int);
+	void		freq_error	(int);
 };
 
 #endif

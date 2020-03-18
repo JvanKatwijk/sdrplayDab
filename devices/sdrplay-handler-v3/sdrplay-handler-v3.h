@@ -1,6 +1,6 @@
 #
 /*
- *    Copyright (C) 2014 .. 2019
+ *    Copyright (C) 2020
  *    Jan van Katwijk (J.vanKatwijk@gmail.com)
  *    Lazy Chair Computing
  *
@@ -34,7 +34,6 @@
 #include	"device-handler.h"
 #include	"ui_sdrplay-widget.h"
 
-class	controlQueue;
 class	sdrplayController;
 class	dabProcessor;
 class	RadioInterface;
@@ -60,11 +59,10 @@ public:
 	void		show			();
 	void		hide			();
 	bool		isHidden		();
-
+	void		set_GRdB		(int);
 private:
 	dabProcessor		*base;
 	sdrplayController	*theController;
-	controlQueue		*theQueue;
 	int32_t			vfoFrequency;
 	std::atomic<bool>	running;
 	int16_t			hwVersion;
@@ -72,6 +70,8 @@ private:
 	QFrame			*myFrame;
 	bool			agcMode;
 	int16_t			nrBits;
+	int			lnaState;
+	int			ppmValue;
 	int16_t			denominator;
 
 private slots:
@@ -83,14 +83,12 @@ private slots:
 	void			set_tunerSelect		(const QString &);
 	void			set_gain		(int);
 public slots:
-        void			freq_offset     (int);
-        void                    freq_error      (int);
-        void                    avgValue        (float);
-        void                    dipValue        (float);
-	void			set_lnaRange	(int, int);
-	void			set_deviceLabel	(const QString &, int);
-	void			setDeviceData	(const QString &, int, float);
-	void			show_TotalGain	(int);
+	void			deviceReady		(bool);
+	void			avgValue		(float);
+        void			dipValue		(float);
+        void			show_TotalGain		(float);
+        void			freq_offset		(int);
+        void			freq_error		(int);
 };
 #endif
 

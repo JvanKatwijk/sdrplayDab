@@ -256,9 +256,8 @@ isEmpty(GITHASHSTRING) {
 INCLUDEPATH	+= /usr/local/include
 INCLUDEPATH	+= /usr/local/include /usr/include/qt4/qwt /usr/include/qt5/qwt /usr/include/qt4/qwt /usr/include/qwt /usr/local/qwt-6.1.4-svn/
 #
-#	choose one of:
-CONFIG		+= sdrplay-v2
-#CONFIG		+= sdrplay-v3
+#CONFIG		+= sdrplay-v2
+CONFIG		+= sdrplay-v3
 
 LIBS		+= -lfftw3f  -lfftw3 -lusb-1.0 -ldl  #
 LIBS		+= -lportaudio
@@ -365,8 +364,6 @@ HEADERS		+= ./devices/sdrplay-handler-v2/sdrplay-handler.h \
 SOURCES		+= ./devices/sdrplay-handler-v2/sdrplay-handler.cpp \
 	           ./devices/sdrplay-handler-v2/sdrplayselect.cpp 
 FORMS		+= ./devices/sdrplay-widget.ui
-LIBS            += -lmirsdrapi-rsp		// uncomment for Linux
-#LIBS		+= -lmir_sdr_api		// uncomment for windows
 DEFINES		+= SDRPLAY_V2
 }
 
@@ -375,10 +372,9 @@ DEPEND_PATH	+= ./devices/sdrplay-handler-v3
 INCLUDEPATH	+= ./devices/sdrplay-handler-v3 \
 	           ./devices/sdrplay-handler-v3/include 
 HEADERS		+= ./devices/sdrplay-handler-v3/sdrplay-handler-v3.h \
-	           ./devices/sdrplay-handler-v3/control-queue.h \
+	           ./devices/sdrplay-handler-v3/sdrplay-commands.h \
 	           ./devices/sdrplay-handler-v3/sdrplay-controller.h 
 SOURCES		+= ./devices/sdrplay-handler-v3/sdrplay-handler-v3.cpp \
-	           ./devices/sdrplay-handler-v3/control-queue.cpp \
 	           ./devices/sdrplay-handler-v3/sdrplay-controller.cpp
 FORMS		+= ./devices/sdrplay-widget.ui
 DEFINES		+= SDRPLAY_V3

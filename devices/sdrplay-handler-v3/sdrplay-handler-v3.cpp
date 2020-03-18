@@ -26,7 +26,6 @@
 #include	<QLabel>
 #include	<QFileDialog>
 #include	"sdrplay-handler-v3.h"
-#include	"control-queue.h"
 #include	"sdrplay-controller.h"
 #include	"dab-processor.h"
 #include	"radio.h"
@@ -41,25 +40,18 @@
 	this	-> myFrame	-> show	();
 	antennaSelector		-> hide	();
 	tunerSelector		-> hide	();
-	theQueue		= new controlQueue ();
 	nrBits			= 12;	// default
 
-	theQueue	-> add (STOP_REQUEST);
 	sdrplaySettings		-> beginGroup ("sdrplaySettings");
-	lnaGainSetting		-> setValue (
-	            sdrplaySettings -> value ("sdrplay-lnastate", 4). toInt());
-	theQueue -> add (LNA_REQUEST, lnaGainSetting -> value ());
-
-	ppmControl		-> setValue (
-	            sdrplaySettings -> value ("sdrplay-ppm", 0). toInt());
-	theQueue -> add (PPM_REQUEST, ppmControl -> value ());
+	lnaState			=
+	            sdrplaySettings -> value ("sdrplay-lnastate", 4). toInt();
+	lnaGainSetting	-> setValue (lnaState);
+	ppmValue		=
+	            sdrplaySettings -> value ("sdrplay-ppm", 0). toInt();
+	ppmControl	-> setValue (ppmValue);
 
 	agcMode		=
 	       sdrplaySettings -> value ("sdrplay-agcMode", 1). toInt() != 0;
-	if (agcMode) 
-	   theQueue -> add (AGC_REQUEST, true, 30);
-	else
-	   theQueue -> add (AGC_REQUEST, false);
 	if (agcMode) {
 	   agcControl -> setChecked (true);
 	}
@@ -78,8 +70,33 @@
 	         this, SLOT (set_tunerSelect (const QString &)));
 	connect (gain_setpoint, SIGNAL (valueChanged (int)),
 	         this, SLOT (set_gain (int)));
-	theController = new sdrplayController (this, theQueue, base);
-	denominator	= 2048;
+	theController = new sdrplayController (this, base,
+	                                       lnaState,
+	                                       ppmValue,
+	                                       gain_setpoint -> value (),
+	                                       agcMode);
+	while (!theController	-> report ())
+	   usleep (1000);
+	if (!theController	-> isOK ())
+	   throw (23);
+//
+//	OK, the controller runs, let us extract the
+//	data to show on the gui
+
+	int high 		= theController -> get_lnaRange ();
+	fprintf (stderr, "lnaRange to %d\n", high);
+	lnaGainSetting		-> setRange (0, high);
+	QString deviceName	= theController -> get_deviceLabel ();
+	deviceLabel		-> setText (deviceName);
+	nrBits			= theController -> get_nrBits ();
+	float	apiVersion	= theController -> get_apiVersion ();
+	api_version		-> display (apiVersion);
+	QString	Serial		= theController	-> get_serialNumber ();
+	serialNumber		-> setText (Serial);
+	lnaValueDisplay		-> display (theController -> get_lnaValue (lnaState));
+	if (deviceName == "RSP-II")
+	   antennaSelector	-> show ();
+
 	debugControl	-> hide ();
 	usleep (1000);
 }
@@ -100,15 +117,6 @@
 
 	myFrame	-> hide ();
 	delete	myFrame;
-	delete	theQueue;
-}
-
-void	sdrplayHandler_v3::freq_offset	(int freqOffset) {
-	freq_offsetDisplay	-> display (freqOffset);
-}
-
-void	sdrplayHandler_v3::freq_error	(int freqError) {
-	freq_errorDisplay	-> display (freqError);
 }
 
 void	sdrplayHandler_v3::avgValue	(float v) {
@@ -118,56 +126,49 @@ void	sdrplayHandler_v3::avgValue	(float v) {
 void	sdrplayHandler_v3::dipValue	(float v) {
 	nullValue	-> display (v);
 }
-void	sdrplayHandler_v3::set_lnaRange	(int low, int high) {
-	lnaGainSetting	-> setRange (low, high);
+
+void	sdrplayHandler_v3::freq_offset	(int f) {
+	freq_offsetDisplay	-> display (f);
 }
 
-void	sdrplayHandler_v3::set_deviceLabel (const QString &s, int nrBits) {
-	this	-> nrBits = nrBits;
-	deviceLabel	-> setText (s);
+void	sdrplayHandler_v3::freq_error	(int f) {
+	freq_errorDisplay	-> display (f);
 }
 
-void	sdrplayHandler_v3::setDeviceData (const QString &s, int hw, float api) {
-	api_version	-> display (api);
-	serialNumber	-> setText (s);
-	(void)hw;
+void	sdrplayHandler_v3::show_TotalGain (float f) {
+	reportedGain	-> display (f);
 }
 
-void	sdrplayHandler_v3::show_TotalGain	(int g) {
-	reportedGain	-> display (g);
-}
 
 int32_t	sdrplayHandler_v3::getVFOFrequency() {
-	return vfoFrequency;
+	return theController	-> getVFOFrequency ();
 }
 
 void	sdrplayHandler_v3::set_lnagainReduction (int lnaState) {
-	theQueue	-> add (LNA_REQUEST, lnaState);
+	fprintf (stderr, "lna state to %d\n", lnaState);
+	theController	-> set_LNA (lnaState);
 }
 
-void	sdrplayHandler_v3::set_gain (int gainValue) {
-	theQueue -> add (GAIN_SETPOINT, gainValue);
+void	sdrplayHandler_v3::set_GRdB (int gainValue) {
+	theController	-> set_GRdB (gainValue);
 }
 
 void	sdrplayHandler_v3::set_agcControl (int dummy) {
 bool agcMode	= agcControl -> isChecked();
 
 	(void)dummy;
-	if (agcMode) 
-	   theQueue	-> add (AGC_REQUEST, true, 30);
-	else
-	   theQueue	-> add (AGC_REQUEST, false);
+	theController	-> set_agc (agcMode, 30);
 }
 
 void	sdrplayHandler_v3::set_ppmControl (int ppm) {
-	theQueue	-> add (PPM_REQUEST, ppm);
+	theController	-> set_PPM (ppm);
 }
 
 void	sdrplayHandler_v3::set_antennaSelect	(const QString &s) {
         if (s == "Antenna A")
-	   theQueue	-> add (ANTENNASELECT_REQUEST, 'A');
+	   theController	-> set_antenna ('A');
         else
-	   theQueue	-> add (ANTENNASELECT_REQUEST, 'B');
+	   theController	-> set_antenna ('B');
 }
 
 void	sdrplayHandler_v3::set_tunerSelect	(const QString &s) {
@@ -179,17 +180,18 @@ bool	sdrplayHandler_v3::restartReader	(int32_t freq) {
 	    theController -> is_receiverRunning ())
 	   return true;
 
-	theQueue	-> add (RESTART_REQUEST, freq);
-	vfoFrequency	= freq;
-	return true;
+	return theController	-> restartReader (freq);
 }
 
 void	sdrplayHandler_v3::stopReader	() {
-
 	if (!theController -> is_threadRunning () ||
 	    !theController -> is_receiverRunning ())
 	   return;
-	theQueue	-> add (STOP_REQUEST);
+	theController	-> stopReader ();
+}
+
+void	sdrplayHandler_v3::set_gain	(int gain) {
+	theController	-> set_gain (gain);
 }
 
 void	sdrplayHandler_v3::resetBuffer	() {
@@ -210,4 +212,7 @@ void	sdrplayHandler_v3::hide		() {
 bool	sdrplayHandler_v3::isHidden	() {
 	return !myFrame -> isVisible ();
 }
+
+void	sdrplayHandler_v3::deviceReady (bool b) {}
+
 

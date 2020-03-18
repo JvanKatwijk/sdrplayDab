@@ -52,7 +52,8 @@
 #endif
 #ifdef	SDRPLAY_V2
 #include	"sdrplay-handler.h"
-#else
+#endif
+#ifdef	SDRPLAY_V3
 #include	"sdrplay-handler-v3.h"
 #endif
 #include	"ui_technical_data.h"
@@ -356,15 +357,18 @@ uint8_t	dabBand;
 	          new sdrplayHandler (this, dabSettings, my_dabProcessor);
 	}
 	catch (int e) {
-	   fprintf (stderr, "no sdrplay device, trying to open a file\n");
+	   fprintf (stderr, "no sdrplay device, trying a next device\n");
 	}
-#else
-	try {
-	   inputDevice  =
-	        new sdrplayHandler_v3 (this, dabSettings, my_dabProcessor);
-	}
-	catch (int e) {
-	   fprintf (stderr, "no sdrplay device, trying to open a file\n");
+#endif
+#ifdef	SDRPLAY_V3
+	if (inputDevice == nullptr) {
+	   try {
+	      inputDevice  =
+	           new sdrplayHandler_v3 (this, dabSettings, my_dabProcessor);
+	   }
+	   catch (int e) {
+	      fprintf (stderr, "no sdrplay device, trying to open a file\n");
+	   }
 	}
 #endif
 	if (inputDevice == nullptr) {

@@ -97,7 +97,7 @@
      <item>
       <layout class="QVBoxLayout" name="verticalLayout_5">
        <item>
-        <widget class="QLCDNumber" name="lnaGRdBDisplay">
+        <widget class="QLCDNumber" name="lnaValueDisplay">
          <property name="toolTip">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The display shows the gain reduction in the lna of the device.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>

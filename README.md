@@ -6,6 +6,18 @@ for recognizing DAB frames than used in qt-dab.
 
 ![sdrplayDab](/sdrplay-picture-1.png?raw=true)
 
+------------------------------------------------------------------
+New: support for both 2.13 and 3.06 support libraries
+-----------------------------------------------------------------
+
+Since future developments for SDRplay devices will be centered
+around the 3.xx libraries, while a large number of users are
+running with the 2.13 library, support is included for both
+libraries.
+
+Uncomming the appropriate lines in the sdrplay-dab.pro file
+allows configuration of either or both libraries.
+
 -------------------------------------------------------------------
 sdrplayDab-3.3
 -------------------------------------------------------------------
@@ -231,15 +243,19 @@ The installer will also call the official installer for the dll implementing the
 
 For Linux on the RPI a script is available that -when run - will fetch all
 required libraries and generate an executable.
+Note that the library (libraries) for SDRplay support have to be installed.
 
-Select either
-	CONFIG	+= sdrplay_v2
-or
-	CONFIG	+= sdrplay_v3
+Note firther that in this version both the 2.13 and the 3.06 libraries
+are supported (if configured).
 
-Note that in the current setup the library version 2 - when selected -
-is compiled in and therefore should be available.
-The library version 3 - when selected -will be loaded dynamically
+Assuming support for bot libraries is configured, operation is
+	
+	- first an attempt is made to load the functions from the support library 2.13. If that succeeds and attempt is made to open the device.
+	- in case of success, operation with that library starts
+	- in case of failure (i.e. no library is found or no device could be identified), functions from the support library 3.06 are loaded. If that succeeds an attempt is made to open the device.
+	- in case of success, operation with that library starts
+	- in case of failure (see above), a widget will show where a
+file can be selected.
 
 # Copyright
 
