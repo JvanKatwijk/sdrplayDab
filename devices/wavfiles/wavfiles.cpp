@@ -161,26 +161,24 @@ int	teller_u	= 0;
 	      t = bufferSize;
 	   }
 
-	   for (i = 0; i < bufferSize; i ++) {
-	      int res = base -> addSymbol (bi [i]);
-	      switch (res) {
-	         default:
-	         case GO_ON:
-	            continue;
+	   int res	= base -> addSymbol (bi, bufferSize);
+	   switch (res) {
+	      default:
+	      case GO_ON:
+	         break;
 	
-	         case DEVICE_UPDATE: {
-	            int offset;
-	            float lowVal, highVal;
-	            teller_u ++;
-	            if (teller_u >= 100) {
-	               base -> update_data (&offset, &lowVal, &highVal);
-	               setOffset (offset);
-	               setGains  (lowVal, highVal);
-	               teller_u = 0;
-	            }
+	      case DEVICE_UPDATE: {
+	         int offset;
+	         float lowVal, highVal;
+	         teller_u ++;
+	         if (teller_u >= 10) {
+	            base -> update_data (&offset, &lowVal, &highVal);
+	            setOffset (offset);
+	            setGains  (lowVal, highVal);
+	            teller_u = 0;
 	         }
-	         continue;
 	      }
+	      break;
 	   }
 
 	   if (nextStop - getMyTime () > 0)

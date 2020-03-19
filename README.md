@@ -14,8 +14,10 @@ Since future developments for SDRplay devices will be centered
 around the 3.xx libraries, while a large number of users are
 running with the 2.13 library, support is included for both
 libraries.
+If support for both libraries is configured, the software will try
+the 2.13 library first and if that fails the 3.06 library.
 
-Uncomming the appropriate lines in the sdrplay-dab.pro file
+Uncommenting the appropriate lines in the sdrplay-dab.pro file
 allows configuration of either or both libraries.
 
 -------------------------------------------------------------------

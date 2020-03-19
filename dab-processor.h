@@ -60,7 +60,7 @@ class	QSettings;
 //
 //	return values for addSymbol
 #define	GO_ON			0
-#define	INITIAL_STRENGTH	1
+//#define	INITIAL_STRENGTH	1
 #define	DEVICE_UPDATE		2
 
 class dabProcessor: public QObject {
@@ -81,17 +81,17 @@ public:
 	                         RingBuffer<uint8_t> *
 	                        );
 		~dabProcessor	(void);
-	int		addSymbol		(std::complex<float>);
-	void		reset			(void);
-	void		stop			(void);
-	void		setOffset		(int32_t);
+	int		addSymbol	(std::complex<float> *, int);
+	void		reset		(void);
+	void		stop		(void);
+	void		setOffset	(int32_t);
 	void		coarseCorrectorOn	(void);
 	void		coarseCorrectorOff	(void);
-	void		startDumping		(SNDFILE *);
-	void		stopDumping		();
-	void		set_scanMode		(bool);
-	void		update_data		(int *, float *, float *);
-	float		initialSignal		(void);
+	void		startDumping	(SNDFILE *);
+	void		stopDumping	();
+	void		set_scanMode	(bool);
+	void		update_data	(int *, float *, float *);
+	float		initialSignal	(void);
 //
 //	inheriting from our delegates
 	void		set_tiiCoordinates	(void);

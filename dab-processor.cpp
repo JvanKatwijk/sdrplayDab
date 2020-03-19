@@ -41,6 +41,8 @@ int	tii_delay	= 5;
 static
 int	tii_counter	= 0;
 
+static	float	avg_dipValue	= 0;
+static	float	avg_signalValue	= 0;
 static  inline
 int16_t valueFor (int16_t b) {
 int16_t res     = 1;
@@ -145,253 +147,259 @@ int32_t	i;
 //	is the driving force, i.e. pumping symbols into the system,
 //	the basic interpretation is using an explicit state-based
 //	approach
-int	dabProcessor::addSymbol	(std::complex<float> symbol) {
+int	dabProcessor::addSymbol	(std::complex<float> *buffer, int count) {
 int	retValue	= GO_ON;		// default
 
 static	int dabCounter	= 0;
 static int lTel		= 0;
 
-	avgSignalValue	= 0.9999 * avgSignalValue +
-	                  0.0001 * jan_abs (symbol);
-	dataBuffer [bufferP] = jan_abs (symbol);
-	avgLocalValue	+= jan_abs (symbol) -
-	                   dataBuffer [(bufferP - 50) & BUFMASK];
-	bufferP		= (bufferP + 1) & BUFMASK;
-	dabCounter ++;
-	if (dumpfilePointer. load () != nullptr)
-	   dump (symbol);
+	for (int i = 0; i < count; i ++) {
+	   std::complex<float> symbol = buffer [i];
+	   avgSignalValue	= 0.9999 * avgSignalValue +
+	                     0.0001 * jan_abs (symbol);
+	   dataBuffer [bufferP] = jan_abs (symbol);
+	   avgLocalValue	+= jan_abs (symbol) -
+	                      dataBuffer [(bufferP - 50) & BUFMASK];
+	   bufferP		= (bufferP + 1) & BUFMASK;
+	   dabCounter ++;
+	   if (dumpfilePointer. load () != nullptr)
+	      dump (symbol);
 
-	if (localCounter < bufferSize)
-	   localBuffer [localCounter ++] = symbol;
-	sampleCount ++;
+	   if (localCounter < bufferSize)
+	      localBuffer [localCounter ++] = symbol;
+	   sampleCount ++;
 
-	if (++sampleCount > INPUT_RATE / N) {
-	   sampleCount	= 0;
-	   spectrumBuffer -> putDataIntoBuffer (localBuffer. data (),
-	                                        localCounter);
-	   show_Spectrum	(localCounter);
-	   localCounter = 0;
-	}
+	   if (++sampleCount > INPUT_RATE / N) {
+	      sampleCount	= 0;
+	      spectrumBuffer -> putDataIntoBuffer (localBuffer. data (),
+	                                           localCounter);
+	      show_Spectrum	(localCounter);
+	      localCounter = 0;
+	   }
 
-	switch (processorMode) {
-	   default:
-	   case START:
-	      avgSignalValue	= 0;
-	      avgLocalValue	= 0;
-	      counter		= 0;
-	      dipValue		= 0;
-	      dipCnt		= 0;
-	      fineOffset	= 0;
-	      correctionNeeded	= true;
-	      coarseOffset	= 0;
-	      totalOffset	= 0;
-	      attempts		= 0;
-	      memset (dataBuffer. data (), 0, BUFSIZE * sizeof (float));
-	      bufferP		= 0;
-	      processorMode	= INIT;
-	      break;
+	   switch (processorMode) {
+	      default:
+	      case START:
+	         avgSignalValue	= 0;
+	         avgLocalValue	= 0;
+	         counter		= 0;
+	         dipValue		= 0;
+	         dipCnt		= 0;
+	         fineOffset	= 0;
+	         correctionNeeded	= true;
+	         coarseOffset	= 0;
+	         totalOffset	= 0;
+	         attempts		= 0;
+	         memset (dataBuffer. data (), 0, BUFSIZE * sizeof (float));
+	         bufferP		= 0;
+	         processorMode	= INIT;
+	         break;
 
-	   case INIT:
-	      if (++counter >= 2 * T_F) {
-	         processorMode	= LOOKING_FOR_DIP;
-	         retValue	= INITIAL_STRENGTH;	
-	         setSynced	(false);
-	         counter	= 0;
-	      }
-	      break;
+	      case INIT:
+	         if (++counter >= 2 * T_F) {
+	            processorMode	= LOOKING_FOR_DIP;
+//	         retValue	= INITIAL_STRENGTH;	
+	            setSynced	(false);
+	            counter	= 0;
+	         }
+	         break;
 //
 //	After initialization, we start looking for a dip,
 //	After recognizing a frame, we pass this and continue
 //	at end of dip
-	   case LOOKING_FOR_DIP:
-	      counter	++;
-	      if (avgLocalValue / 50 < avgSignalValue * 0.45) {
-	         retValue	= DEVICE_UPDATE;
-	         processorMode	= DIP_FOUND;
-	         dipValue	= 0;
-	         dipCnt		= 0;
-	      }
-	      else	
-	      if (counter > T_F) {
-	         counter	= 0;
-	         attempts ++;
-	         if (attempts > 5) {
-	            emit No_Signal_Found ();
-	            processorMode	= START;
+	      case LOOKING_FOR_DIP:
+	         counter	++;
+	         if (avgLocalValue / 50 < avgSignalValue * 0.45) {
+	            retValue		= DEVICE_UPDATE;
+	            processorMode	= DIP_FOUND;
+	            dipValue		= 0;
+	            dipCnt		= 0;
 	         }
-	         else {
-	            counter		= 0;
-	            processorMode	= INIT;
-	         }
-	      }
-	      break;
-	      
-	   case DIP_FOUND:
-	      dipValue		+= jan_abs (symbol);
-	      dipCnt		++;
-	      if (avgLocalValue / BUFSIZE > avgSignalValue * 0.8) {
-	         dipValue		/= dipCnt;
-                 processorMode  	= END_OF_DIP;
-	         ofdmBufferIndex	= 0;
-	      }
-	      else 
-	      if (dipCnt > T_null + 100) {	// no luck here
-	         dipCnt		= 0;
-	         attempts ++;
-	         if (attempts > 5) {
-	            emit No_Signal_Found ();
-	            processorMode       = START;
-	         }
-	         else {
-	            counter		= 0;
-	            processorMode       = INIT;
-	         }
-	      }
-	      break;
-
-	   case END_OF_DIP:
-	      ofdmBuffer [ofdmBufferIndex ++] = symbol;
-	      if (ofdmBufferIndex >= T_u) {
-	         int startIndex = phaseSynchronizer. findIndex (ofdmBuffer, 3);
-	         if (startIndex < 0) {		// no sync
+	         else	
+	         if (counter > T_F) {
+	            counter	= 0;
+	            attempts ++;
 	            if (attempts > 5) {
 	               emit No_Signal_Found ();
-                       processorMode       = START;
-	               break;
-                    }
+	               processorMode	= START;
+	            }
 	            else {
-	               processorMode = LOOKING_FOR_DIP;
-	               break;
+	               counter		= 0;
+	               processorMode	= INIT;
 	            }
 	         }
-	         attempts	= 0;	// we made it!!!
-	         dabCounter	= dabCounter - T_u + startIndex;
-	         dabCounter	= T_u - startIndex;
-	         memmove (ofdmBuffer. data (),
-	                  &((ofdmBuffer. data ()) [startIndex]),
-                           (T_u - startIndex) * sizeof (std::complex<float>));
-	         ofdmBufferIndex  = T_u - startIndex;
-	         processorMode	= GO_FOR_BLOCK_0;
-	         setSynced (true);
-	      }
-	      break;
-
-	   case TO_NEXT_FRAME:
-	      ofdmBuffer [ofdmBufferIndex ++] = symbol;
-	      if (ofdmBufferIndex >= T_u) {
-	         int startIndex = phaseSynchronizer. findIndex (ofdmBuffer, 10);
-	         if (startIndex < 0) {		// no sync
-	            if (attempts > 5) {
-	               emit No_Signal_Found ();
-                       processorMode       = START;
-	               break;
-                    }
-	            else {
-	               processorMode = LOOKING_FOR_DIP;
-	               break;
-	            }
-	         }
-	         attempts	= 0;	// we made it!!!
-	         dabCounter	= dabCounter - T_u + startIndex;
-//	         fprintf (stderr, "%d \n", dabCounter);
-	         dabCounter	= T_u - startIndex;
-	         memmove (ofdmBuffer. data (),
-	                  &((ofdmBuffer. data ()) [startIndex]),
-                           (T_u - startIndex) * sizeof (std::complex<float>));
-	         ofdmBufferIndex  = T_u - startIndex;
-	         processorMode	= GO_FOR_BLOCK_0;
-	      }
-	      break;
-
-	   case GO_FOR_BLOCK_0:
-	      ofdmBuffer [ofdmBufferIndex] = symbol;
-	      if (++ofdmBufferIndex < T_u)
 	         break;
-	      my_ofdmDecoder. processBlock_0 (ofdmBuffer);
-	      my_mscHandler.  processBlock_0 (ofdmBuffer. data ());
+	         
+	      case DIP_FOUND:
+	         dipValue		+= jan_abs (symbol);
+	         dipCnt		++;
+	         if (avgLocalValue / BUFSIZE > avgSignalValue * 0.8) {
+	            dipValue		/= dipCnt;
+	            avg_dipValue	= 0.9 * avg_dipValue + 0.1 * dipValue;
+	            avg_signalValue	= 0.9 * avg_signalValue + 0.1 * avgSignalValue;
+	            processorMode  	= END_OF_DIP;
+	            ofdmBufferIndex	= 0;
+	         }
+	         else 
+	         if (dipCnt > T_null + 100) {	// no luck here
+	            dipCnt		= 0;
+	            attempts ++;
+	            if (attempts > 5) {
+	               emit No_Signal_Found ();
+	               processorMode       = START;
+	            }
+	            else {
+	               counter		= 0;
+	               processorMode       = INIT;
+	            }
+	         }
+	         break;
+
+	      case END_OF_DIP:
+	         ofdmBuffer [ofdmBufferIndex ++] = symbol;
+	         if (ofdmBufferIndex >= T_u) {
+	            int startIndex = phaseSynchronizer. findIndex (ofdmBuffer, 3);
+	            if (startIndex < 0) {		// no sync
+	               if (attempts > 5) {
+	                  emit No_Signal_Found ();
+                       processorMode       = START;
+	                  break;
+                    }
+	               else {
+	                  processorMode = LOOKING_FOR_DIP;
+	                  break;
+	               }
+	            }
+	            attempts	= 0;	// we made it!!!
+	            dabCounter	= dabCounter - T_u + startIndex;
+	            dabCounter	= T_u - startIndex;
+	            memmove (ofdmBuffer. data (),
+	                     &((ofdmBuffer. data ()) [startIndex]),
+                           (T_u - startIndex) * sizeof (std::complex<float>));
+	            ofdmBufferIndex  = T_u - startIndex;
+	            processorMode	= GO_FOR_BLOCK_0;
+	            setSynced (true);
+	         }
+	         break;
+
+	      case TO_NEXT_FRAME:
+	         ofdmBuffer [ofdmBufferIndex ++] = symbol;
+	         if (ofdmBufferIndex >= T_u) {
+	            int startIndex = phaseSynchronizer. findIndex (ofdmBuffer, 10);
+	            if (startIndex < 0) {		// no sync
+	               if (attempts > 5) {
+	                  emit No_Signal_Found ();
+                       processorMode       = START;
+	                  break;
+                    }
+	               else {
+	                  processorMode = LOOKING_FOR_DIP;
+	                  break;
+	               }
+	            }
+	            attempts	= 0;	// we made it!!!
+	            dabCounter	= dabCounter - T_u + startIndex;
+//	         fprintf (stderr, "%d \n", dabCounter);
+	            dabCounter	= T_u - startIndex;
+	            memmove (ofdmBuffer. data (),
+	                     &((ofdmBuffer. data ()) [startIndex]),
+                           (T_u - startIndex) * sizeof (std::complex<float>));
+	            ofdmBufferIndex  = T_u - startIndex;
+	            processorMode	= GO_FOR_BLOCK_0;
+	         }
+	         break;
+
+	      case GO_FOR_BLOCK_0:
+	         ofdmBuffer [ofdmBufferIndex] = symbol;
+	         if (++ofdmBufferIndex < T_u)
+	            break;
+	         my_ofdmDecoder. processBlock_0 (ofdmBuffer);
+	         my_mscHandler.  processBlock_0 (ofdmBuffer. data ());
 //      Here we look only at the block_0 when we need a coarse
 //      frequency synchronization.
-	      correctionNeeded     = !my_ficHandler. syncReached ();
-	      if (correctionNeeded) {
-	         int correction    =
+	         correctionNeeded     = !my_ficHandler. syncReached ();
+	         if (correctionNeeded) {
+	            int correction    =
                     phaseSynchronizer. estimate_CarrierOffset (ofdmBuffer);
-	         if (correction != 100) {
-	            coarseOffset   = correction * carrierDiff;
-	            totalOffset	+= coarseOffset;
-	            if (abs (totalOffset) > Khz (25)) {
-	               totalOffset	= 0;
-	               coarseOffset	= 0;
+	            if (correction != 100) {
+	               coarseOffset   = correction * carrierDiff;
+	               totalOffset	+= coarseOffset;
+	               if (abs (totalOffset) > Khz (25)) {
+	                  totalOffset	= 0;
+	                  coarseOffset	= 0;
+	               }
 	            }
 	         }
-	      }
-	      else
-	         coarseOffset	= 0;
+	         else
+	            coarseOffset	= 0;
 //
 //	and prepare for reading the data blocks
-	      FreqCorr		= std::complex<float> (0, 0);
-	      ofdmSymbolCount	= 1;
-	      ofdmBufferIndex	= 0;
-	      processorMode	= BLOCK_READING;
-	      break;
-
-	   case BLOCK_READING:
-	      ofdmBuffer [ofdmBufferIndex ++] = symbol;
-	      if (ofdmBufferIndex < T_s) 
+	         FreqCorr		= std::complex<float> (0, 0);
+	         ofdmSymbolCount	= 1;
+	         ofdmBufferIndex	= 0;
+	         processorMode	= BLOCK_READING;
 	         break;
 
-	      for (int i = (int)T_u; i < (int)T_s; i ++)
-	         FreqCorr += ofdmBuffer [i] * conj (ofdmBuffer [i - T_u]);
-	      if (ofdmSymbolCount < 4) {
-	         my_ofdmDecoder. decode (ofdmBuffer,
-	                                 ofdmSymbolCount, ibits. data ());
-	         my_ficHandler. process_ficBlock (ibits, ofdmSymbolCount);
-	      }
+	      case BLOCK_READING:
+	         ofdmBuffer [ofdmBufferIndex ++] = symbol;
+	         if (ofdmBufferIndex < T_s) 
+	            break;
 
-	      my_mscHandler. process_Msc  (&((ofdmBuffer. data ()) [T_g]),
-	                                   ofdmSymbolCount);
-	      ofdmBufferIndex	= 0;
-	      if (++ofdmSymbolCount >= nrBlocks) {
-	         processorMode	= END_OF_FRAME;
-	      }
-	      break;
+	         for (int i = (int)T_u; i < (int)T_s; i ++)
+	            FreqCorr += ofdmBuffer [i] * conj (ofdmBuffer [i - T_u]);
+	         if (ofdmSymbolCount < 4) {
+	            my_ofdmDecoder. decode (ofdmBuffer,
+	                                    ofdmSymbolCount, ibits. data ());
+	            my_ficHandler. process_ficBlock (ibits, ofdmSymbolCount);
+	         }
 
-	   case END_OF_FRAME:
-	      fineOffset = arg (FreqCorr) / M_PI * carrierDiff / 2;
+	         my_mscHandler. process_Msc  (&((ofdmBuffer. data ()) [T_g]),
+	                                      ofdmSymbolCount);
+	         ofdmBufferIndex	= 0;
+	         if (++ofdmSymbolCount >= nrBlocks) {
+	            processorMode	= END_OF_FRAME;
+	         }
+	         break;
 
-	      if (fineOffset > carrierDiff / 2) {
-	         coarseOffset += carrierDiff;
-	         fineOffset -= carrierDiff;
-	      }
-	      else
-	      if (fineOffset < -carrierDiff / 2) {
-	         coarseOffset -= carrierDiff;
-	         fineOffset += carrierDiff;
-	      }
+	      case END_OF_FRAME:
+	         fineOffset = arg (FreqCorr) / M_PI * carrierDiff / 2;
+
+	         if (fineOffset > carrierDiff / 2) {
+	            coarseOffset += carrierDiff;
+	            fineOffset -= carrierDiff;
+	         }
+	         else
+	         if (fineOffset < -carrierDiff / 2) {
+	            coarseOffset -= carrierDiff;
+	            fineOffset += carrierDiff;
+	         }
 //
 //	Once here, we are - without even looking - sure
 //	that we are in a dip period
-	      processorMode	= PREPARE_FOR_SKIP_NULL_PERIOD;
-	      retValue		= DEVICE_UPDATE;
-	      break;
+	         processorMode	= PREPARE_FOR_SKIP_NULL_PERIOD;
+	         retValue		= DEVICE_UPDATE;
+	         break;
 //
 //	here, we skip the next null period
-	   case PREPARE_FOR_SKIP_NULL_PERIOD:
-	      nullCount		= 0;
-	      dipValue		= jan_abs (symbol);
-	      ofdmBuffer [nullCount ++] = symbol;
-	      processorMode	= SKIP_NULL_PERIOD;
-	      break;
+	      case PREPARE_FOR_SKIP_NULL_PERIOD:
+	         nullCount		= 0;
+	         dipValue		= jan_abs (symbol);
+	         ofdmBuffer [nullCount ++] = symbol;
+	         processorMode	= SKIP_NULL_PERIOD;
+	         break;
 
-	   case SKIP_NULL_PERIOD:
-	      ofdmBuffer [nullCount] = symbol;
-	      dipValue		+= jan_abs (symbol);
-	      nullCount ++;
-	      if (nullCount >= T_null - 1) {
-	         processorMode = TO_NEXT_FRAME;
-	         dipValue	/= T_null;
-	         handle_tii_detection (ofdmBuffer);
-	      }
-	      break;
+	      case SKIP_NULL_PERIOD:
+	         ofdmBuffer [nullCount] = symbol;
+	         dipValue		+= jan_abs (symbol);
+	         nullCount ++;
+	         if (nullCount >= T_null - 1) {
+	            processorMode = TO_NEXT_FRAME;
+	            dipValue	/= T_null;
+	            avg_dipValue	= 0.9 * avg_dipValue + 0.1 * dipValue;
+	            handle_tii_detection (ofdmBuffer);
+	         }
+	         break;
+	   }
 	}
 	return retValue;
 }
@@ -494,10 +502,10 @@ int	result	= coarseOffset + fineOffset;
 	   set_freqOffset (result);
 	}
 	*freq		= result;
-	*dip		= dipValue;
-	*firstSymb	= avgSignalValue;
+	*dip		= avg_dipValue;
+	*firstSymb	= avg_signalValue;
 	
-	show_snr (avgSignalValue, dipValue);
+	show_snr (avg_signalValue, avg_dipValue);
 }
 
 float	dabProcessor::initialSignal	(void) {

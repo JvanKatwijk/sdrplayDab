@@ -371,6 +371,7 @@ void myStreamCallback (int16_t		*xi,
 int16_t	i;
 sdrplayHandler	*p	= static_cast<sdrplayHandler *> (cbContext);
 float	denominator	= (float)(p -> denominator);
+std::complex<float> localBuf [numSamples];
 static	int teller	= 0;
 mir_sdr_ErrT	err;
 
@@ -381,27 +382,26 @@ mir_sdr_ErrT	err;
 	   std::complex<float> symb = std::complex<float> (
 	                                       (float) (xi [i]) / denominator,
 	                                       (float) (xq [i]) / denominator);
-	   int res = p -> base -> addSymbol (symb);
-	   switch (res) {
-	      case GO_ON:
-	         continue;
-	   
-	      case DEVICE_UPDATE: {
-	         int	offset;
-	         float	lowVal, highVal;
-	         if (++ teller > 50) {
-	            p -> base -> update_data (&offset, &lowVal, &highVal);
-	            p -> setOffset (offset);
-	            p -> setGains  (lowVal, highVal);
-	            teller	= 0;
-	         }
-	      }
+	   localBuf [i] = symb;
+	}
+	int res = p -> base -> addSymbol (localBuf, numSamples);
+	switch (res) {
+	   case GO_ON:
 	      continue;
 	   
-	   case INITIAL_STRENGTH: {
-	         float str = 10 * log10 ((p -> base -> initialSignal () + 0.005) / denominator);
-	         p -> set_initialGain (str);
+	   case DEVICE_UPDATE: {
+	      int	offset;
+	      float	lowVal, highVal;
+	      if (++ teller > 50) {
+	         p -> base -> update_data (&offset, &lowVal, &highVal);
+	         p -> setOffset (offset);
+	         p -> setGains  (lowVal, highVal);
+	         teller	= 0;
 	      }
+	   }
+	   continue;
+	   
+	   case INITIAL_STRENGTH: {
 	      continue;
 	   }
 	}

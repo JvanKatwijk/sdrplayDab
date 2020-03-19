@@ -259,7 +259,7 @@ void    StreamACallback (short *xi, short *xq,
                          void *cbContext) {
 sdrplayController *p	= static_cast<sdrplayController *> (cbContext);
 float	denominator	= (float)(p -> denominator);
-std::complex<int16_t> localBuf [numSamples];
+std::complex<float> localBuf [numSamples];
 static int teller	= 0;
 
 	(void)params;
@@ -272,31 +272,30 @@ static int teller	= 0;
 	   std::complex<float> symb = std::complex<float> (
 	                                       (float) (xi [i]) / denominator,
 	                                       (float) (xq [i]) / denominator);
-	   int res = p -> base -> addSymbol (symb);
-	   switch (res) {
-	      case GO_ON:
-	         continue;
+	   localBuf [i] = symb;
+	}
+	int res = p -> base -> addSymbol (localBuf, numSamples);
+	switch (res) {
+	   case GO_ON:
+	      break;
 	   
-	      case DEVICE_UPDATE: {
-	         int    offset;
-	         float  lowVal, highVal;
-                 if (++ teller > 10) {
-                    p -> base -> update_data (&offset, &lowVal, &highVal);
-                    p -> setOffset (offset);
-                    p -> setGains  (lowVal, highVal);
-                    teller      = 0;
-                 }
+	   case DEVICE_UPDATE: {
+	      int    offset;
+	      float  lowVal, highVal;
+              if (++ teller > 10) {
+                 p -> base -> update_data (&offset, &lowVal, &highVal);
+                 p -> setOffset (offset);
+                 p -> setGains  (lowVal, highVal);
+                 teller      = 0;
               }
-
-	         
-	      continue;
+           }
+	   break;
 	   
-	   case INITIAL_STRENGTH: {
-	         float str = 10 * log10 ((p -> base -> initialSignal () + 0.005) / denominator);
-//	         p -> set_initialGain (str);
-	      }
-	      continue;
-	   }
+//	   case INITIAL_STRENGTH: {
+//	      float str = 10 * log10 ((p -> base -> initialSignal () + 0.005) / denominator);
+//	      p -> set_initialGain (str);
+//	   }
+//	   break;
 	}
 }
 

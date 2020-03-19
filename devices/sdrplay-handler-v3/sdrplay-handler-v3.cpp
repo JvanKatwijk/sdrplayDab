@@ -77,8 +77,10 @@
 	                                       agcMode);
 	while (!theController	-> report ())
 	   usleep (1000);
-	if (!theController	-> isOK ())
+	if (!theController	-> isOK ()) {
+	   delete myFrame;
 	   throw (23);
+	}
 //
 //	OK, the controller runs, let us extract the
 //	data to show on the gui
