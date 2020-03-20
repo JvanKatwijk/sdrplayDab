@@ -387,7 +387,7 @@ mir_sdr_ErrT	err;
 	int res = p -> base -> addSymbol (localBuf, numSamples);
 	switch (res) {
 	   case GO_ON:
-	      continue;
+	      break;
 	   
 	   case DEVICE_UPDATE: {
 	      int	offset;
@@ -399,11 +399,11 @@ mir_sdr_ErrT	err;
 	         teller	= 0;
 	      }
 	   }
-	   continue;
+	   break;
 	   
-	   case INITIAL_STRENGTH: {
-	      continue;
-	   }
+//	   case INITIAL_STRENGTH: {
+//	      break;
+//	   }
 	}
 	(void)	firstSampleNum;
 	(void)	grChanged;

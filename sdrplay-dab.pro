@@ -10,11 +10,11 @@ QT		+= widgets xml
 #CONFIG		+= console
 CONFIG		-= console
 QMAKE_CXXFLAGS	+= -std=c++11
-#QMAKE_CFLAGS	+=  -flto -ffast-math
-#MAKE_CXXFLAGS	+=  -flto -ffast-math
-QMAKE_CFLAGS	+=  -g
-QMAKE_CXXFLAGS	+=  -g
-QMAKE_LFLAGS	+=  -g
+QMAKE_CFLAGS	+=  -flto -ffast-math
+MAKE_CXXFLAGS	+=  -flto -ffast-math
+#QMAKE_CFLAGS	+=  -g
+#QMAKE_CXXFLAGS	+=  -g
+#QMAKE_LFLAGS	+=  -g
 QMAKE_CXXFLAGS += -isystem $$[QT_INSTALL_HEADERS]
 RC_ICONS	=  sdrplay-dab.ico
 RESOURCES	+= resources.qrc
@@ -256,7 +256,7 @@ isEmpty(GITHASHSTRING) {
 INCLUDEPATH	+= /usr/local/include
 INCLUDEPATH	+= /usr/local/include /usr/include/qt4/qwt /usr/include/qt5/qwt /usr/include/qt4/qwt /usr/include/qwt /usr/local/qwt-6.1.4-svn/
 #
-#CONFIG		+= sdrplay-v2
+CONFIG		+= sdrplay-v2
 CONFIG		+= sdrplay-v3
 
 LIBS		+= -lfftw3f  -lfftw3 -lusb-1.0 -ldl  #

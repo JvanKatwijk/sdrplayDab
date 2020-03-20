@@ -74,14 +74,19 @@ int	get_lnaGRdB (int hwVersion, int lnaState) {
 	nrBits			= 12;	// default
 
 	sdrplaySettings		-> beginGroup ("sdrplaySettings");
-	lnaState			=
+	gainSetPoint		=
+	            sdrplaySettings -> value ("sdrplay-gainSetPoint", -35).
+	                                                     toInt ();
+	fprintf (stderr, "gainsetpoint found %d\n", gainSetPoint);
+	gain_setpoint		-> setValue (gainSetPoint);
+	lnaState		=
 	            sdrplaySettings -> value ("sdrplay-lnastate", 4). toInt();
 	lnaGainSetting	-> setValue (lnaState);
 	ppmValue		=
 	            sdrplaySettings -> value ("sdrplay-ppm", 0). toInt();
 	ppmControl	-> setValue (ppmValue);
 
-	agcMode		=
+	agcMode			=
 	       sdrplaySettings -> value ("sdrplay-agcMode", 1). toInt() != 0;
 	if (agcMode) {
 	   agcControl -> setChecked (true);
@@ -116,9 +121,7 @@ int	get_lnaGRdB (int hwVersion, int lnaState) {
 //	OK, the controller runs, let us extract the
 //	data to show on the gui
 
-	fprintf (stderr, "task should run by now\n");
 	
-	gainSetPoint		= lnaGainSetting	-> value ();
 	lnaGainSetting		-> setRange (0, lna_upperBound);
 	deviceLabel		-> setText (deviceName);
 	api_version		-> display (apiVersion);
@@ -136,10 +139,12 @@ int	get_lnaGRdB (int hwVersion, int lnaState) {
 	   usleep (1000);
 //	thread should be stopped by now
 	sdrplaySettings	-> beginGroup ("sdrplaySettings");
+	sdrplaySettings -> setValue ("sdrplay-gainSetPoint",
+	                                 gain_setpoint -> value ());
 	sdrplaySettings -> setValue ("sdrplay-ppm",
-	                                           ppmControl -> value ());
+	                                 ppmControl -> value ());
 	sdrplaySettings -> setValue ("sdrplay-lnastate",
-	                                           lnaGainSetting -> value ());
+	                                 lnaGainSetting -> value ());
 	sdrplaySettings	-> setValue ("sdrplay-agcMode",
 	                                  agcControl -> isChecked() ? 1 : 0);
 	sdrplaySettings	-> endGroup ();
