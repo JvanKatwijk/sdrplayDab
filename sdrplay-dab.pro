@@ -10,11 +10,11 @@ QT		+= widgets xml
 #CONFIG		+= console
 CONFIG		-= console
 QMAKE_CXXFLAGS	+= -std=c++11
-QMAKE_CFLAGS	+=  -flto -ffast-math
-MAKE_CXXFLAGS	+=  -flto -ffast-math
-#QMAKE_CFLAGS	+=  -g
-#QMAKE_CXXFLAGS	+=  -g
-#QMAKE_LFLAGS	+=  -g
+#QMAKE_CFLAGS	+=  -flto -ffast-math
+#MAKE_CXXFLAGS	+=  -flto -ffast-math
+QMAKE_CFLAGS	+=  -g
+QMAKE_CXXFLAGS	+=  -g
+QMAKE_LFLAGS	+=  -g
 QMAKE_CXXFLAGS += -isystem $$[QT_INSTALL_HEADERS]
 RC_ICONS	=  sdrplay-dab.ico
 RESOURCES	+= resources.qrc
@@ -372,10 +372,8 @@ DEPEND_PATH	+= ./devices/sdrplay-handler-v3
 INCLUDEPATH	+= ./devices/sdrplay-handler-v3 \
 	           ./devices/sdrplay-handler-v3/include 
 HEADERS		+= ./devices/sdrplay-handler-v3/sdrplay-handler-v3.h \
-	           ./devices/sdrplay-handler-v3/sdrplay-commands.h \
-	           ./devices/sdrplay-handler-v3/sdrplay-controller.h 
-SOURCES		+= ./devices/sdrplay-handler-v3/sdrplay-handler-v3.cpp \
-	           ./devices/sdrplay-handler-v3/sdrplay-controller.cpp
+	           ./devices/sdrplay-handler-v3/sdrplay-commands.h 
+SOURCES		+= ./devices/sdrplay-handler-v3/sdrplay-handler-v3.cpp 
 FORMS		+= ./devices/sdrplay-widget.ui
 DEFINES		+= SDRPLAY_V3
 }

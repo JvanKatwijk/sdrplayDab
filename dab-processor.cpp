@@ -210,7 +210,6 @@ static int lTel		= 0;
 	      case LOOKING_FOR_DIP:
 	         counter	++;
 	         if (avgLocalValue / 50 < avgSignalValue * 0.45) {
-	            retValue		= DEVICE_UPDATE;
 	            processorMode	= DIP_FOUND;
 	            dipValue		= 0;
 	            dipCnt		= 0;
@@ -237,6 +236,8 @@ static int lTel		= 0;
 	            dipValue		/= dipCnt;
 	            avg_dipValue	= 0.9 * avg_dipValue + 0.1 * dipValue;
 	            avg_signalValue	= 0.9 * avg_signalValue + 0.1 * avgSignalValue;
+	            retValue		= DEVICE_UPDATE;
+	            dipValue		= 0;
 	            processorMode  	= END_OF_DIP;
 	            ofdmBufferIndex	= 0;
 	         }
@@ -291,7 +292,7 @@ static int lTel		= 0;
 	                  emit No_Signal_Found ();
                        processorMode       = START;
 	                  break;
-                    }
+	               }
 	               else {
 	                  processorMode = LOOKING_FOR_DIP;
 	                  break;
@@ -377,7 +378,6 @@ static int lTel		= 0;
 //	Once here, we are - without even looking - sure
 //	that we are in a dip period
 	         processorMode	= PREPARE_FOR_SKIP_NULL_PERIOD;
-	         retValue		= DEVICE_UPDATE;
 	         break;
 //
 //	here, we skip the next null period
@@ -396,6 +396,9 @@ static int lTel		= 0;
 	            processorMode = TO_NEXT_FRAME;
 	            dipValue	/= T_null;
 	            avg_dipValue	= 0.9 * avg_dipValue + 0.1 * dipValue;
+	            avg_signalValue	= 0.9 * avg_signalValue + 0.1 * avgSignalValue;
+	            retValue	= DEVICE_UPDATE;
+	            dipValue	= 0;
 	            handle_tii_detection (ofdmBuffer);
 	         }
 	         break;

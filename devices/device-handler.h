@@ -24,12 +24,12 @@
 #define	__DEVICE_HANDLER__
 
 #include	<stdint.h>
-#include	<QObject>
+#include	<QThread>
 #include	"dab-constants.h"
 
 class	dabProcessor;
 
-class	deviceHandler: public QObject {
+class	deviceHandler: public QThread {
 public:
 			deviceHandler 	(void);
 virtual			~deviceHandler 	(void);

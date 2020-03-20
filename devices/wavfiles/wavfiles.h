@@ -35,7 +35,7 @@
 class	dabProcessor;
 
 class	wavFiles: public deviceHandler,
-	          public Ui_filereaderWidget, QThread {
+	          public Ui_filereaderWidget {
 public:
 			wavFiles	(QString, dabProcessor *);
 	       		~wavFiles	(void);
