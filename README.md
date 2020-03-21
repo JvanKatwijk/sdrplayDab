@@ -27,6 +27,7 @@ sdrplayDab-3.3
 * [Introduction](#introduction)
 * [Features](#features)
 * [Widgets and scopes](#widgets-and-scopes)
+* [Presets](#Presets)
 * [Comment on some settings](#comment-on-some-settings)
 * [Obsolete properties](#Obsolete-properties)
 * [Installation](#features)
@@ -162,6 +163,43 @@ During **scanning**, a separate window will be shown with the results
 of the scan as shown in the picture.
 
 ![sdrplayDab](/sdrplayDab-scanner.png?raw=true)
+
+----------------------------------------------------------------------
+Presets
+----------------------------------------------------------------------
+
+A *preset* selector is available to store and retrieve "favorit" services.
+Note that the services are encoded as "channel:serviceName" pair:
+it sometimes happens that a service appears in more than one ensemble
+(as example the "Omroep West" service appears in channels 5B and 8A.)
+
+The presets are stored in an xml file, `.qt-dab-presets.xml'.
+
+*Adding* a service to the *presets* is simply by *clicking with the right mouse
+button on the name of the service that is currently selected in the
+servicelist* (recall that clicking with the *left* mouse button
+well select the service with that name).
+
+Of course, one is also able to *remove* an entry from the presets.
+To do this, select the entry (by putting the curson on it without
+clicking any of the mouse buttons) and press the *shift* and the *delete*
+button on the keyboard simultaneously.
+
+---------------------------------------------------------------------------
+Maintaining History 
+---------------------------------------------------------------------------
+
+Qt-DAB-3.3 saves all service names found. Pairs Channel:serviceName
+will be made (in)visible when touching the appropriate button (the
+one labeled with "xx").
+
+The data in stored in a file in xml format.
+The *history* can be cleared by a click of the right mouse button,
+clicking on a channel:servicename combination with the left
+mouse button will cause the QT-DAB software to attempt to set the channel and
+select the name.
+
+![Qt-DAB with sdrplay input](/qt-dab-3.3-history.png?raw=true)
 
 ---------------------------------------------------------------------------
 Comment on some settings
