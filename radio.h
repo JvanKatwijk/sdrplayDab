@@ -85,7 +85,7 @@ protected:
 	bool			eventFilter (QObject *obj, QEvent *event);
 private:
 	QString			version;
-	bool			noSort;
+	int			serviceOrder;
 	presetHandler		my_presetHandler;
 	bandHandler		theBand;
 	scannerTable		theTable;
@@ -133,7 +133,11 @@ private:
         SNDFILE                 *audioDumper;
 
 	QStandardItemModel	model;
-	QStringList		Services;
+	std::vector<serviceId>	serviceList;
+	bool			isMember (std::vector<serviceId>,
+                                               serviceId);
+	std::vector<serviceId>	insert   (std::vector<serviceId>,
+                                                      serviceId, int);
 	QStringList		soundChannels;
 	QTimer			displayTimer;
 	QTimer			signalTimer;
